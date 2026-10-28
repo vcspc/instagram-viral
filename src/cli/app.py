@@ -11,6 +11,7 @@ from src.agent.viral_analyzer import ViralAnalyzer
 from src.config.logging_config import setup_logging
 from src.config.settings import settings
 from src.instagram.collector import InstagramCollector
+from src.instagram.date_filter import parse_timeframe
 from src.instagram.engagement import sort_reels_by_viral_score
 from src.instagram.rate_limiter import RateLimiter
 from src.instagram.session_manager import InstagramSessionManager
@@ -67,12 +68,28 @@ def search(
     query: str = typer.Option(..., "--query", "-q", help="Intenção ou nicho de pesquisa em linguagem natural."),
     limit: int = typer.Option(20, "--limit", "-l", help="Quantidade desejada de Reels únicos analisados."),
     rounds: int = typer.Option(2, "--rounds", "-r", help="Número máximo de rodadas de expansão pelo agente."),
+    timeframe: str = typer.Option(
+        "all",
+        "--timeframe",
+        "-t",
+        help="Filtrar Reels por período: '1w' (1 semana), '1m' (1 mês), '3m' (3 meses), '1y' (1 ano) ou dias como '7d'.",
+    ),
     no_analysis: bool = typer.Option(False, "--no-analysis", help="Pula a análise qualitativa final do Gemini."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Exibe logs detalhados de depuração."),
 ) -> None:
     """Pesquisa Reels em qualquer nicho, orquestrado pela IA do Gemini."""
     setup_logging(level=logging.DEBUG if verbose else logging.INFO)
     render_banner()
+
+    # Validação do período de tempo
+    try:
+        min_taken_at, timeframe_desc = parse_timeframe(timeframe)
+    except ValueError as err:
+        console.print(f"[bold red]Erro no parâmetro de período:[/bold red] {err}")
+        raise typer.Exit(code=1)
+
+    if min_taken_at:
+        console.print(f"[bold cyan]Filtro de Período Ativo:[/bold cyan] [bold green]{timeframe_desc}[/bold green]\n")
 
     # Validação de credenciais
     if not settings.gemini_api_key:
@@ -159,11 +176,15 @@ def search(
                 with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:
                     if term_type == "keyword":
                         progress.add_task(description=f"Pesquisando Reels por busca textual: '{term_val}'...", total=None)
-                        reels_found = collector.search_reels_by_keyword(term_val, amount=min(15, needed))
+                        reels_found = collector.search_reels_by_keyword(
+                            term_val, amount=min(15, needed), min_taken_at=min_taken_at
+                        )
                         label = f"busca:'{term_val}'"
                     else:
                         progress.add_task(description=f"Pesquisando Reels na hashtag #{term_val}...", total=None)
-                        reels_found = collector.search_reels_by_hashtag(term_val, amount=min(15, needed))
+                        reels_found = collector.search_reels_by_hashtag(
+                            term_val, amount=min(15, needed), min_taken_at=min_taken_at
+                        )
                         label = f"#{term_val}"
             except (LoginRequired, ClientUnauthorizedError):
                 console.print(
@@ -232,7 +253,13 @@ def search(
             render_analysis_panel(analysis)
 
     # 8. Exportação dos Relatórios
-    paths = exporter.export_all(query=query, strategy=strategy, reels=ranked_reels, analysis=analysis)
+    paths = exporter.export_all(
+        query=query,
+        strategy=strategy,
+        reels=ranked_reels,
+        analysis=analysis,
+        timeframe_desc=timeframe_desc,
+    )
     console.print("\n[bold green]Relatórios gerados com sucesso:[/bold green]")
     console.print(f"  [cyan]Markdown:[/cyan] {paths['markdown']}")
     console.print(f"  [cyan]Planilha CSV:[/cyan] {paths['csv']}")

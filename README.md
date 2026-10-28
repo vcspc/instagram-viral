@@ -159,23 +159,28 @@ Para evitar que o Instagram invalide a sessão do seu navegador ao detectar dive
 python -m src.main search --query "ideias de bolos decorados simples para iniciantes" --limit 20
 ```
 
-### Exemplos Práticos por Nicho
+### Exemplos Práticos por Nicho e Período
 
-- **Finanças e Investimentos:**
+- **Reels da Última Semana (7 dias):**
   ```bash
-  python -m src.main search -q "investimentos e fundos imobiliarios para jovens" -l 25
+  python -m src.main search -q "noticias e cortes do mercado financeiro" -t 1w -l 15
   ```
-- **Saúde e Fitness:**
+- **Reels do Último Mês (30 dias):**
   ```bash
-  python -m src.main search -q "receitas saudaveis rapidas para secar barriga" -l 15
+  python -m src.main search -q "receitas saudaveis rapidas para secar barriga" -t 1m -l 20
   ```
-- **Marketing e Vendas:**
+- **Reels dos Últimos 3 Meses:**
   ```bash
-  python -m src.main search -q "estrategias de vendas b2b pelo whatsapp" -l 20
+  python -m src.main search -q "estrategias de vendas b2b pelo whatsapp" -t 3m -l 25
+  ```
+- **Reels do Último Ano:**
+  ```bash
+  python -m src.main search -q "ideias virais de decoracao de bolos" -t 1y -l 20
   ```
 
 ### Parâmetros da CLI
 - `-q, --query TEXT`: Intenção ou nicho de pesquisa em linguagem natural (obrigatório).
+- `-t, --timeframe TEXT`: Filtro por data de postagem: `'1w'` (1 semana), `'1m'` (1 mês), `'3m'` (3 meses), `'6m'` (6 meses), `'1y'` (1 ano), dias como `'7d'`, `'15d'`, ou `'all'` para todo o período (padrão: `all`).
 - `-l, --limit INTEGER`: Quantidade de Reels únicos a coletar e analisar (padrão: 20).
 - `-r, --rounds INTEGER`: Quantidade máxima de rodadas de refinamento do agente Gemini (padrão: 2).
 - `--no-analysis`: Pula a engenharia reversa qualitativa do Gemini e gera apenas a tabela com métricas.

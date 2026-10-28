@@ -76,5 +76,49 @@ class TestInstagramCollector(unittest.TestCase):
         self.assertEqual(reels[0].code, "ReelRecent456")
 
 
+    def test_search_reels_filters_by_date(self):
+        from datetime import datetime, timedelta, timezone
+
+        now = datetime.now(timezone.utc)
+        min_date = now - timedelta(days=7)
+
+        # 1 mídia recente (dentro dos 7 dias)
+        media_recent = SimpleNamespace(
+            pk="111",
+            code="RecentCode",
+            caption_text="Vídeo recente",
+            video_duration=20.0,
+            taken_at=now - timedelta(days=2),
+            media_type=2,
+            product_type="clips",
+            user=SimpleNamespace(username="user1"),
+            play_count=1000,
+            like_count=100,
+            comment_count=10,
+        )
+
+        # 1 mídia antiga (de 30 dias atrás)
+        media_old = SimpleNamespace(
+            pk="222",
+            code="OldCode",
+            caption_text="Vídeo antigo",
+            video_duration=25.0,
+            taken_at=now - timedelta(days=30),
+            media_type=2,
+            product_type="clips",
+            user=SimpleNamespace(username="user2"),
+            play_count=5000,
+            like_count=500,
+            comment_count=50,
+        )
+
+        self.mock_client.media_search.return_value = [media_recent, media_old]
+
+        reels = self.collector.search_reels_by_keyword("marketing", amount=10, min_taken_at=min_date)
+        # Deve reter apenas o recente
+        self.assertEqual(len(reels), 1)
+        self.assertEqual(reels[0].code, "RecentCode")
+
+
 if __name__ == "__main__":
     unittest.main()

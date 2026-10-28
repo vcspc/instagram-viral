@@ -21,14 +21,15 @@ class ReportExporter:
         strategy: SearchStrategy,
         reels: list[ReelItem],
         analysis: ViralAnalysis | None = None,
+        timeframe_desc: str = "Todo o período",
     ) -> dict[str, Path]:
         """Exporta os relatórios nos três formatos e retorna os caminhos dos arquivos."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         base_name = f"{slugify(query)}_{timestamp}"
 
-        md_path = self.export_markdown(base_name, query, strategy, reels, analysis)
+        md_path = self.export_markdown(base_name, query, strategy, reels, analysis, timeframe_desc)
         csv_path = self.export_csv(base_name, reels)
-        json_path = self.export_json(base_name, query, strategy, reels, analysis)
+        json_path = self.export_json(base_name, query, strategy, reels, analysis, timeframe_desc)
 
         return {"markdown": md_path, "csv": csv_path, "json": json_path}
 
@@ -39,6 +40,7 @@ class ReportExporter:
         strategy: SearchStrategy,
         reels: list[ReelItem],
         analysis: ViralAnalysis | None,
+        timeframe_desc: str = "Todo o período",
     ) -> Path:
         """Gera um relatório executivo em Markdown com links clicáveis."""
         file_path = self.output_dir / f"{base_name}.md"
@@ -46,6 +48,7 @@ class ReportExporter:
         lines = [
             f"# Relatório de Descoberta: Reels Virais no Instagram",
             f"\n> **Tema Pesquisado:** *{query}*",
+            f"> **Filtro de Período:** {timeframe_desc}",
             f"> **Data de Geração:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
             f"> **Total de Reels Analisados:** {len(reels)}\n",
             "---",
@@ -76,8 +79,8 @@ class ReportExporter:
 
         lines.extend([
             "## 3. Tabela dos Reels Mais Virais Encontrados\n",
-            "| # | Criador | Views | Likes | Comentários | Engajamento | Viral Score | Link Direto | Origem |",
-            "|---|---|---|---|---|---|---|---|---|",
+            "| # | Criador | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Link Direto | Origem |",
+            "|---|---|---|---|---|---|---|---|---|---|",
         ])
 
         for idx, reel in enumerate(reels, 1):
@@ -88,8 +91,9 @@ class ReportExporter:
             score_fmt = f"{reel.metrics.viral_score:.1f}"
             link_md = f"[{reel.code}]({reel.url})"
             author_md = f"[@{reel.author_username}](https://www.instagram.com/{reel.author_username}/)"
+            date_str = reel.taken_at.strftime("%d/%m/%Y") if reel.taken_at else "-"
             lines.append(
-                f"| {idx} | {author_md} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {link_md} | {reel.source_term} |"
+                f"| {idx} | {author_md} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {link_md} | {reel.source_term} |"
             )
 
         file_path.write_text("\n".join(lines), encoding="utf-8")
@@ -104,6 +108,7 @@ class ReportExporter:
             "code",
             "url",
             "author_username",
+            "taken_at",
             "views",
             "likes",
             "comments",
@@ -124,6 +129,7 @@ class ReportExporter:
                     "code": reel.code,
                     "url": reel.url,
                     "author_username": reel.author_username,
+                    "taken_at": reel.taken_at.isoformat() if reel.taken_at else "",
                     "views": reel.metrics.views,
                     "likes": reel.metrics.likes,
                     "comments": reel.metrics.comments,
@@ -143,12 +149,14 @@ class ReportExporter:
         strategy: SearchStrategy,
         reels: list[ReelItem],
         analysis: ViralAnalysis | None,
+        timeframe_desc: str = "Todo o período",
     ) -> Path:
         """Exporta os dados brutos estruturados em JSON."""
         file_path = self.output_dir / f"{base_name}.json"
 
         data = {
             "query": query,
+            "timeframe": timeframe_desc,
             "generated_at": datetime.now().isoformat(),
             "strategy": strategy.model_dump(),
             "analysis": analysis.model_dump() if analysis else None,

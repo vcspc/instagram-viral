@@ -1,8 +1,10 @@
 """Coletor de publicações focado em Reels com múltiplos fallbacks e busca textual."""
 import logging
+from datetime import datetime
 from instagrapi import Client
 from instagrapi.exceptions import ClientUnauthorizedError, LoginRequired, RateLimitError
 from instagrapi.extractors import extract_media_v1
+from src.instagram.date_filter import is_within_timeframe
 from src.instagram.engagement import calculate_metrics
 from src.instagram.rate_limiter import RateLimiter
 from src.models.instagram import ReelItem
@@ -18,7 +20,9 @@ class InstagramCollector:
         self.rate_limiter = rate_limiter or RateLimiter()
         self._seen_pks: set[str] = set()
 
-    def search_reels_by_keyword(self, keyword: str, amount: int = 20) -> list[ReelItem]:
+    def search_reels_by_keyword(
+        self, keyword: str, amount: int = 20, min_taken_at: datetime | None = None
+    ) -> list[ReelItem]:
         """Pesquisa Reels diretamente por termo ou palavra-chave na busca do Instagram."""
         clean_kw = keyword.strip()
         if not clean_kw:
@@ -59,6 +63,9 @@ class InstagramCollector:
             if not self._is_reel_or_video(media):
                 continue
 
+            if not is_within_timeframe(getattr(media, "taken_at", None), min_taken_at):
+                continue
+
             pk = str(getattr(media, "pk", ""))
             if not pk or pk in self._seen_pks:
                 continue
@@ -70,7 +77,9 @@ class InstagramCollector:
         logger.info(f"Encontrados {len(results)} Reels únicos pela palavra-chave '{clean_kw}'")
         return results
 
-    def search_reels_by_hashtag(self, hashtag: str, amount: int = 20) -> list[ReelItem]:
+    def search_reels_by_hashtag(
+        self, hashtag: str, amount: int = 20, min_taken_at: datetime | None = None
+    ) -> list[ReelItem]:
         """Pesquisa Reels associados a uma hashtag com estratégia em cascata."""
         clean_tag = hashtag.lstrip("#").strip().lower()
         if not clean_tag:
@@ -124,6 +133,9 @@ class InstagramCollector:
 
         for media in medias:
             if not self._is_reel_or_video(media):
+                continue
+
+            if not is_within_timeframe(getattr(media, "taken_at", None), min_taken_at):
                 continue
 
             pk = str(getattr(media, "pk", ""))

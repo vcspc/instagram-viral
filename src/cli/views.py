@@ -45,6 +45,7 @@ def render_reels_table(reels: list[ReelItem], limit: int = 15) -> None:
 
     table.add_column("#", style="dim", width=4, justify="center")
     table.add_column("Criador", style="bold white", width=16)
+    table.add_column("Data", justify="center", style="dim", width=10)
     table.add_column("Views", justify="right", style="cyan")
     table.add_column("Likes", justify="right", style="green")
     table.add_column("Comments", justify="right", style="yellow")
@@ -55,9 +56,11 @@ def render_reels_table(reels: list[ReelItem], limit: int = 15) -> None:
 
     for idx, reel in enumerate(reels[:limit], 1):
         score_style = "bold green" if idx <= 3 else "bold yellow" if idx <= 7 else "white"
+        date_str = reel.taken_at.strftime("%d/%m/%Y") if reel.taken_at else "-"
         table.add_row(
             str(idx),
             f"@{reel.author_username}",
+            date_str,
             format_number(reel.metrics.views),
             format_number(reel.metrics.likes),
             format_number(reel.metrics.comments),
