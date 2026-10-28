@@ -1,0 +1,74 @@
+# ==========================================
+# Variáveis de Ambiente e Segredos (NUNCA comitar)
+# ==========================================
+.env
+.env.local
+.env.*
+!.env.example
+
+# ==========================================
+# Sessões e Credenciais do Instagram
+# ==========================================
+sessions/
+*.session.json
+
+# ==========================================
+# Relatórios Gerados pela Aplicação
+# ==========================================
+outputs/
+
+# ==========================================
+# Python Cache, Bytecode e Distribuição
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# Ambientes Virtuais (Virtual Environments)
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Testes e Cobertura
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ==========================================
+# Editores, IDEs e Arquivos de Sistema
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
