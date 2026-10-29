@@ -53,3 +53,54 @@ class ViralAnalysis(BaseModel):
     actionable_recommendations: list[str] = Field(
         description="Recomendações práticas e acionáveis para o usuário replicar o sucesso"
     )
+
+
+class PositioningAnalysis(BaseModel):
+    value_proposition_clarity: str = Field(
+        description="Clareza da proposta de valor transmitida pela bio e feed"
+    )
+    target_audience: str = Field(
+        description="Público-alvo primário identificado no perfil"
+    )
+    bio_cta_evaluation: str = Field(
+        description="Avaliação crítica da chamada para ação e link da bio"
+    )
+    bio_strengths: list[str] = Field(
+        description="Pontos fortes do posicionamento atual na bio"
+    )
+    bio_improvements: list[str] = Field(
+        description="Sugestões práticas de melhoria ou reescrita da bio para aumentar conversão"
+    )
+
+
+class SpokenScriptAnalysis(BaseModel):
+    first_3s_hooks_analysis: list[str] = Field(
+        description="Decodificação dos ganchos falados nos primeiros 3s dos reels mais virais"
+    )
+    speech_pacing_and_retention: str = Field(
+        description="Análise do ritmo de fala, quebras de padrão e retenção ao longo dos vídeos"
+    )
+    verbal_cta_patterns: list[str] = Field(
+        description="Padrões de chamadas para ação faladas pelo criador nos vídeos"
+    )
+    script_structure_formula: str = Field(
+        description="Fórmula padrão de roteiro identificada (ex: Gancho -> Problema -> Solução -> CTA)"
+    )
+
+
+class ProfileAnalysis(BaseModel):
+    positioning: PositioningAnalysis = Field(
+        description="Análise do perfil, biografia e posicionamento estratégico"
+    )
+    reels_performance_summary: str = Field(
+        description="Diagnóstico da consistência e fatores que causaram picos de visualização"
+    )
+    spoken_scripts: SpokenScriptAnalysis = Field(
+        description="Decodificação detalhada dos roteiros falados com base nas transcrições"
+    )
+    top_tactics_to_model: list[str] = Field(
+        description="Táticas práticas para replicar o sucesso desse perfil com originalidade"
+    )
+    recommended_script_template: str = Field(
+        description="Template prático de roteiro inspirado no vídeo de maior desempenho do perfil"
+    )

@@ -152,39 +152,55 @@ Para evitar que o Instagram invalide a sessão do seu navegador ao detectar dive
 
 ---
 
-## Como Usar a Pesquisa
+## Modos de Operação da Ferramenta
 
-### Comando Básico
+A ferramenta possui dois modos principais de pesquisa:
+
+---
+
+### Modo 1: Pesquisa Temática por Nicho (`search`)
+Pesquisa Reels virais em qualquer nicho em linguagem natural, expandindo em hashtags e termos semânticos com o Gemini:
+
 ```bash
-python -m src.main search --query "ideias de bolos decorados simples para iniciantes" --limit 20
+python -m src.main search -q "bolos decorados simples" -t 1m -l 20
 ```
 
-### Exemplos Práticos por Nicho e Período
-
-- **Reels da Última Semana (7 dias):**
-  ```bash
-  python -m src.main search -q "noticias e cortes do mercado financeiro" -t 1w -l 15
-  ```
-- **Reels do Último Mês (30 dias):**
-  ```bash
-  python -m src.main search -q "receitas saudaveis rapidas para secar barriga" -t 1m -l 20
-  ```
-- **Reels dos Últimos 3 Meses:**
-  ```bash
-  python -m src.main search -q "estrategias de vendas b2b pelo whatsapp" -t 3m -l 25
-  ```
-- **Reels do Último Ano:**
-  ```bash
-  python -m src.main search -q "ideias virais de decoracao de bolos" -t 1y -l 20
-  ```
-
-### Parâmetros da CLI
+#### Parâmetros da CLI (`search`):
 - `-q, --query TEXT`: Intenção ou nicho de pesquisa em linguagem natural (obrigatório).
 - `-t, --timeframe TEXT`: Filtro por data de postagem: `'1w'` (1 semana), `'1m'` (1 mês), `'3m'` (3 meses), `'6m'` (6 meses), `'1y'` (1 ano), dias como `'7d'`, `'15d'`, ou `'all'` para todo o período (padrão: `all`).
 - `-l, --limit INTEGER`: Quantidade de Reels únicos a coletar e analisar (padrão: 20).
 - `-r, --rounds INTEGER`: Quantidade máxima de rodadas de refinamento do agente Gemini (padrão: 2).
 - `--no-analysis`: Pula a engenharia reversa qualitativa do Gemini e gera apenas a tabela com métricas.
 - `-v, --verbose`: Exibe logs detalhados de depuração da API.
+
+---
+
+### Modo 2: Auditoria de Perfil e Transcrição de Roteiros (`profile`)
+Audita um perfil específico do Instagram passando a arroba (`@username`), analisa seguidores, posts, biografia, ranqueia os Reels de melhor desempenho, **baixa os Top Reels, converte em áudio via FFmpeg, transcreve com timestamps via Whisper** e decodifica a estratégia de roteiro com o Gemini:
+
+```bash
+python -m src.main profile --username @criador -l 30 -t 3m --top-transcribe 3
+```
+
+#### O que o modo de perfil realiza:
+1. **Auditoria Cadastral:** Extrai e exibe total de seguidores, perfis seguidos, contagem de publicações, selo de verificado, biografia completa e links externos.
+2. **Mineração e Ranking:** Coleta os Reels recentes do criador (com filtro opcional por data como `-t 1m` ou `-t 3m`) e calcula o `viral_score` ponderado.
+3. **Download e Conversão de Áudio:** Baixa os Top N Reels mais virais do perfil e converte os vídeos para WAV 16kHz mono via **FFmpeg**.
+4. **Transcrição Whisper com Timestamps:** Transcreve a fala com marcadores de tempo exatos (`[MM:SS - MM:SS] Texto falado`) e isola o **gancho falado nos primeiros 3 segundos**.
+5. **Diagnóstico da IA Gemini:**
+   - **Posicionamento e Bio:** Avalia a proposta de valor, público-alvo, CTA e sugere melhorias práticas na bio.
+   - **Decodificação de Roteiro:** Analisa os ganchos auditivos dos primeiros 3s, ritmo de fala, pausas, retenção e chamadas para ação faladas (CTAs).
+   - **Template de Roteiro:** Cria um roteiro passo a passo replicável inspirado no vídeo de maior sucesso do criador.
+6. **Limpeza Automática:** Deleta imediatamente os arquivos temporários de vídeo e áudio baixados ao término da análise.
+
+#### Parâmetros da CLI (`profile`):
+- `-u, --username TEXT`: Nome de usuário do perfil no Instagram (ex: `@criador` ou `criador`) (obrigatório).
+- `-l, --limit INTEGER`: Quantidade de Reels recentes do perfil a analisar (padrão: 30).
+- `-t, --timeframe TEXT`: Filtro por período de postagem (`1w`, `1m`, `3m`, `6m`, `1y` ou `all`) (padrão: `all`).
+- `-n, --top-transcribe INTEGER`: Quantidade dos Reels mais virais do perfil para baixar e transcrever (padrão: 3).
+- `-w, --whisper-model TEXT`: Tamanho do modelo Whisper (`base`, `tiny`, `small`) (padrão: `base`).
+- `--no-analysis`: Pula o diagnóstico qualitativo da IA e gera apenas as tabelas e transcrições.
+- `-v, --verbose`: Exibe logs detalhados de depuração.
 
 ---
 
