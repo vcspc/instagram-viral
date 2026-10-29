@@ -292,6 +292,12 @@ def profile(
     whisper_model: str = typer.Option(
         "base", "--whisper-model", "-w", help="Modelo Whisper: 'base', 'tiny' ou 'small'."
     ),
+    language: str = typer.Option(
+        "pt",
+        "--language",
+        "--lang",
+        help="Idioma para transcrição do Whisper: 'pt' (padrão, português brasileiro), 'en', 'es', etc., ou 'auto' para detecção automática.",
+    ),
     no_analysis: bool = typer.Option(
         False, "--no-analysis", help="Pula a geração do diagnóstico qualitativo pelo Gemini."
     ),
@@ -394,8 +400,12 @@ def profile(
 
     # 5. Download e Transcrição com Whisper dos Top N Reels
     if top_transcribe > 0:
-        console.print(f"\n[bold cyan]Baixando e transcrevendo os {min(top_transcribe, len(ranked_reels))} Reels mais virais via Whisper...[/bold cyan]")
-        audio_mgr = AudioTranscriptionManager(client=client, whisper_model=whisper_model)
+        console.print(f"\n[bold cyan]Baixando e transcrevendo os {min(top_transcribe, len(ranked_reels))} Reels mais virais via Whisper ({language.upper()})...[/bold cyan]")
+        audio_mgr = AudioTranscriptionManager(
+            client=client,
+            whisper_model=whisper_model,
+            language=language,
+        )
 
         with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
             task = progress.add_task(description="Iniciando processamento de áudio...", total=None)

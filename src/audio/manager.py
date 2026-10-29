@@ -22,10 +22,12 @@ class AudioTranscriptionManager:
         whisper_model: str = "base",
         device: str = "cpu",
         ffmpeg_path: str | None = None,
+        language: str | None = "pt",
     ):
         self.downloader = ReelDownloader(client=client)
         self.converter = AudioConverter(ffmpeg_path=ffmpeg_path)
         self.transcriber = WhisperTranscriber(model_size=whisper_model, device=device)
+        self.language = language
 
     def process_top_reels(
         self,
@@ -55,8 +57,8 @@ class AudioTranscriptionManager:
                     # 2. Conversão para WAV 16kHz via FFmpeg
                     wav_path = self.converter.video_to_whisper_audio(video_path)
 
-                    # 3. Transcrição com timestamps via Whisper
-                    transcript = self.transcriber.transcribe(wav_path)
+                    # 3. Transcrição com timestamps via Whisper no idioma configurado
+                    transcript = self.transcriber.transcribe(wav_path, language=self.language)
                     reel.transcript = transcript
 
                     logger.info(

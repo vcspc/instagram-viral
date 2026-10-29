@@ -179,14 +179,20 @@ python -m src.main search -q "bolos decorados simples" -t 1m -l 20
 Audita um perfil específico do Instagram passando a arroba (`@username`), analisa seguidores, posts, biografia, ranqueia os Reels de melhor desempenho, **baixa os Top Reels, converte em áudio via FFmpeg, transcreve com timestamps via Whisper** e decodifica a estratégia de roteiro com o Gemini:
 
 ```bash
-python -m src.main profile --username @criador -l 30 -t 3m --top-transcribe 3
+python -m src.main profile lucureau -l 30 -t 3m --top-transcribe 3
+
+# Exemplo transcrevendo um perfil gringo em inglês:
+python -m src.main profile hubermanlab -n 3 --lang en
+
+# Exemplo com detecção automática de idioma:
+python -m src.main profile @criador -n 3 --lang auto
 ```
 
 #### O que o modo de perfil realiza:
 1. **Auditoria Cadastral:** Extrai e exibe total de seguidores, perfis seguidos, contagem de publicações, selo de verificado, biografia completa e links externos.
 2. **Mineração e Ranking:** Coleta os Reels recentes do criador (com filtro opcional por data como `-t 1m` ou `-t 3m`) e calcula o `viral_score` ponderado.
 3. **Download e Conversão de Áudio:** Baixa os Top N Reels mais virais do perfil e converte os vídeos para WAV 16kHz mono via **FFmpeg**.
-4. **Transcrição Whisper com Timestamps:** Transcreve a fala com marcadores de tempo exatos (`[MM:SS - MM:SS] Texto falado`) e isola o **gancho falado nos primeiros 3 segundos**.
+4. **Transcrição Whisper com Timestamps:** Transcreve a fala com marcadores de tempo exatos (`[MM:SS - MM:SS] Texto falado`) e isola o **gancho falado nos primeiros 3 segundos**. Por padrão transcreve em **português brasileiro** (`pt`), com suporte a qualquer idioma ou detecção automática (`auto`).
 5. **Diagnóstico da IA Gemini:**
    - **Posicionamento e Bio:** Avalia a proposta de valor, público-alvo, CTA e sugere melhorias práticas na bio.
    - **Decodificação de Roteiro:** Analisa os ganchos auditivos dos primeiros 3s, ritmo de fala, pausas, retenção e chamadas para ação faladas (CTAs).
@@ -194,11 +200,13 @@ python -m src.main profile --username @criador -l 30 -t 3m --top-transcribe 3
 6. **Limpeza Automática:** Deleta imediatamente os arquivos temporários de vídeo e áudio baixados ao término da análise.
 
 #### Parâmetros da CLI (`profile`):
-- `-u, --username TEXT`: Nome de usuário do perfil no Instagram (ex: `@criador` ou `criador`) (obrigatório).
+- `username`: Nome de usuário do perfil no Instagram (ex: `lucureau` ou `"@lucureau"`).
+- `-u, --username TEXT`: Nome de usuário alternativo via flag.
 - `-l, --limit INTEGER`: Quantidade de Reels recentes do perfil a analisar (padrão: 30).
 - `-t, --timeframe TEXT`: Filtro por período de postagem (`1w`, `1m`, `3m`, `6m`, `1y` ou `all`) (padrão: `all`).
 - `-n, --top-transcribe INTEGER`: Quantidade dos Reels mais virais do perfil para baixar e transcrever (padrão: 3).
 - `-w, --whisper-model TEXT`: Tamanho do modelo Whisper (`base`, `tiny`, `small`) (padrão: `base`).
+- `--language, --lang TEXT`: Idioma para transcrição do Whisper: `'pt'` (padrão, português brasileiro), `'en'`, `'es'`, ou `'auto'` para detecção automática (padrão: `pt`).
 - `--no-analysis`: Pula o diagnóstico qualitativo da IA e gera apenas as tabelas e transcrições.
 - `-v, --verbose`: Exibe logs detalhados de depuração.
 

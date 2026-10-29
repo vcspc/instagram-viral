@@ -55,13 +55,20 @@ class WhisperTranscriber:
             )
             logger.info("Modelo Whisper carregado com sucesso.")
 
-    def transcribe(self, audio_path: Path, language: str | None = None) -> ReelTranscript:
-        """Transcreve o arquivo de áudio e extrai segmentos com timestamps e gancho inicial."""
+    def transcribe(self, audio_path: Path, language: str | None = "pt") -> ReelTranscript:
+        """Transcreve o arquivo de áudio e extrai segmentos com timestamps e gancho inicial.
+
+        Por padrão, utiliza 'pt' (português brasileiro). Se for informado 'auto' ou None,
+        o idioma é detectado automaticamente pelo Whisper.
+        """
         audio_path = Path(audio_path)
         if not audio_path.exists():
             raise FileNotFoundError(f"Arquivo de áudio não encontrado: {audio_path}")
 
         self._ensure_model_loaded()
+
+        # Normaliza o idioma: 'auto', vazio ou None ativam detecção automática
+        target_lang = None if language in (None, "auto", "detect", "") else str(language).lower().strip()
 
         # Carrega o áudio diretamente via soundfile em float32 para evitar chamadas com metadata_errors
         audio_input = str(audio_path)
@@ -76,10 +83,11 @@ class WhisperTranscriber:
             logger.debug(f"Carregamento soundfile alternativo ({load_err}). Usando caminho do arquivo diretamente...")
             audio_input = str(audio_path)
 
-        logger.info(f"Transcrevendo áudio: {audio_path.name}...")
+        lang_label = target_lang.upper() if target_lang else "DETECÇÃO AUTOMÁTICA"
+        logger.info(f"Transcrevendo áudio ({lang_label}): {audio_path.name}...")
         segments_generator, info = self._model.transcribe(
             audio_input,
-            language=language,
+            language=target_lang,
             beam_size=5,
             vad_filter=True,  # Filtro VAD para suprimir ruído e silêncio
         )
