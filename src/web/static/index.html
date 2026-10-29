@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Viral Reels AI Agent</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            Instagram Viral Reels <span class="text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">AI Agent</span>
+          </h1>
+          <p class="text-xs text-slate-400">Descoberta, Transcrição Whisper & Engenharia Reversa Gemini</p>
+        </div>
+      </div>
+
+      <!-- Status Indicators -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div id="status-instagram" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+          <span>Instagram: Verificando...</span>
+        </div>
+        <div id="status-gemini" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+          <span>Gemini AI: Verificando...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-800/60 overflow-x-auto">
+      <button onclick="switchTab('search')" id="tab-btn-search" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-teal-500 text-teal-400 transition">
+        <i data-lucide="search" class="w-4 h-4"></i> Pesquisa por Nicho
+      </button>
+      <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="user" class="w-4 h-4"></i> Auditoria de Perfil
+      </button>
+      <button onclick="switchTab('reports')" id="tab-btn-reports" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="folder" class="w-4 h-4"></i> Relatórios & Downloads
+      </button>
+      <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="settings" class="w-4 h-4"></i> Configurações
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: PESQUISA POR NICHO                  -->
+    <!-- ========================================== -->
+    <section id="tab-search" class="space-y-6">
+      <!-- Search Input Card -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <i data-lucide="compass" class="w-5 h-5 text-teal-400"></i> Descobrir Reels Virais por Nicho
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">Digite um tema ou dor em linguagem natural. A IA do Gemini expandirá em termos e o Whisper transcreverá os melhores ganchos.</p>
+
+        <form id="form-search" onsubmit="executeSearch(event)" class="space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-3.5 text-slate-500"></i>
+              <input type="text" id="search-query" required placeholder="Ex: ideias de bolos decorados simples para iniciantes..."
+                class="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition">
+            </div>
+            <button type="submit" id="btn-search-submit" class="px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 transition shrink-0">
+              <i data-lucide="play" class="w-4 h-4 fill-white"></i> Iniciar Pesquisa
+            </button>
+          </div>
+
+          <!-- Advanced Filters Row -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 text-xs">
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Período de Postagem</label>
+              <select id="search-timeframe" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+                <option value="all">Todo o período</option>
+                <option value="1w">Última semana (7d)</option>
+                <option value="1m">Último mês (30d)</option>
+                <option value="3m" selected>Últimos 3 meses (90d)</option>
+                <option value="6m">Últimos 6 meses</option>
+                <option value="1y">Último ano</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Limite de Reels</label>
+              <input type="number" id="search-limit" value="20" min="5" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Transcrever Top N (Whisper)</label>
+              <input type="number" id="search-top-transcribe" value="3" min="0" max="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Idioma de Transcrição</label>
+              <select id="search-language" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+                <option value="pt" selected>Português (pt)</option>
+                <option value="en">Inglês (en)</option>
+                <option value="es">Espanhol (es)</option>
+                <option value="auto">Automático (auto)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Rodadas do Agente</label>
+              <input type="number" id="search-rounds" value="2" min="1" max="5" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Search Loading State -->
+      <div id="search-loading" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+        <div class="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mx-auto"></div>
+        <div>
+          <h3 class="text-base font-semibold text-white">Pesquisa Inteligente em Andamento...</h3>
+          <p class="text-xs text-slate-400 mt-1" id="search-loading-step">O Agente Gemini está desenhando a estratégia de busca...</p>
+        </div>
+      </div>
+
+      <!-- Search Results Container -->
+      <div id="search-results" class="hidden space-y-6"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: AUDITORIA DE PERFIL                -->
+    <!-- ========================================== -->
+    <section id="tab-profile" class="hidden space-y-6">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <i data-lucide="user-check" class="w-5 h-5 text-teal-400"></i> Auditoria de Criador & Roteiros
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">Analise seguidores, posts, bio, ranqueie os Reels virais e transcreva o que o criador fala com marcadores de tempo.</p>
+
+        <form id="form-profile" onsubmit="executeProfile(event)" class="space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <span class="absolute left-4 top-3 text-slate-500 font-bold">@</span>
+              <input type="text" id="profile-username" required placeholder="nome_do_criador (sem @)"
+                class="w-full pl-9 pr-4 py-3 bg-slate-950 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition">
+            </div>
+            <button type="submit" id="btn-profile-submit" class="px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 transition shrink-0">
+              <i data-lucide="sparkles" class="w-4 h-4 fill-white"></i> Auditar Perfil
+            </button>
+          </div>
+
+          <!-- Advanced Filters Row -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Período de Postagem</label>
+              <select id="profile-timeframe" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+                <option value="all">Todo o período</option>
+                <option value="1w">Última semana</option>
+                <option value="1m">Último mês</option>
+                <option value="3m" selected>Últimos 3 meses</option>
+                <option value="6m">Últimos 6 meses</option>
+                <option value="1y">Último ano</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Quantidade de Reels</label>
+              <input type="number" id="profile-limit" value="30" min="5" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Transcrever Top N (Whisper)</label>
+              <input type="number" id="profile-top-transcribe" value="3" min="0" max="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-medium mb-1">Idioma da Fala</label>
+              <select id="profile-language" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 focus:outline-none focus:border-teal-500">
+                <option value="pt" selected>Português (pt)</option>
+                <option value="en">Inglês (en)</option>
+                <option value="es">Espanhol (es)</option>
+                <option value="auto">Automático (auto)</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Profile Loading State -->
+      <div id="profile-loading" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+        <div class="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mx-auto"></div>
+        <div>
+          <h3 class="text-base font-semibold text-white">Auditoria em Andamento...</h3>
+          <p class="text-xs text-slate-400 mt-1" id="profile-loading-step">Consultando dados do perfil e minerando Reels...</p>
+        </div>
+      </div>
+
+      <!-- Profile Results Container -->
+      <div id="profile-results" class="hidden space-y-6"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: CENTRAL DE RELATÓRIOS               -->
+    <!-- ========================================== -->
+    <section id="tab-reports" class="hidden space-y-6">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="folder-archive" class="w-5 h-5 text-teal-400"></i> Relatórios Gerados
+            </h2>
+            <p class="text-sm text-slate-400">Acesse e faça o download das análises salvas em Markdown, CSV e JSON.</p>
+          </div>
+          <button onclick="loadReportsList()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-lg flex items-center gap-1.5 transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Atualizar Lista
+          </button>
+        </div>
+
+        <div id="reports-table-container" class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="text-slate-400 bg-slate-950/60 uppercase border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Nome do Arquivo</th>
+                <th class="py-3 px-4">Formato</th>
+                <th class="py-3 px-4">Tamanho</th>
+                <th class="py-3 px-4">Data de Modificação</th>
+                <th class="py-3 px-4 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="reports-table-body" class="divide-y divide-slate-800/60 font-mono">
+              <tr>
+                <td colspan="5" class="py-8 text-center text-slate-500 font-sans">Carregando relatórios...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: CONFIGURAÇÕES                       -->
+    <!-- ========================================== -->
+    <section id="tab-settings" class="hidden space-y-6">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur max-w-2xl">
+        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i> Status das Integrações
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">Configurações carregadas do arquivo local <code class="text-teal-400 font-mono">.env</code>.</p>
+
+        <div class="space-y-4 text-sm">
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <h4 class="font-semibold text-white">Google Gemini AI</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Responsável pelo planejamento de busca e engenharia reversa de roteiros.</p>
+            </div>
+            <span id="cfg-gemini-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">Verificando...</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <h4 class="font-semibold text-white">Conexão com Instagram (instagrapi)</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Sessão persistida na pasta local <code class="font-mono text-slate-300">sessions/</code>.</p>
+            </div>
+            <span id="cfg-instagram-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">Verificando...</span>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div>
+              <h4 class="font-semibold text-white">FFmpeg & faster-whisper</h4>
+              <p class="text-xs text-slate-400 mt-0.5">Processamento de áudio 16kHz mono e transcrição local com timestamps.</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ativo (int8 CPU)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-sm">
+    <i data-lucide="info" id="toast-icon" class="w-5 h-5 text-teal-400"></i>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <!-- Front-end Application Logic -->
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-teal-500', 'text-teal-400');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        activeBtn.classList.add('border-teal-500', 'text-teal-400');
+      }
+
+      ['search', 'profile', 'reports', 'settings'].forEach(id => {
+        document.getElementById(`tab-${id}`).classList.add('hidden');
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      if (tabId === 'reports') {
+        loadReportsList();
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.textContent = message;
+      if (type === 'error') {
+        toastIcon.setAttribute('data-lucide', 'alert-circle');
+        toastIcon.className = 'w-5 h-5 text-rose-400';
+      } else {
+        toastIcon.setAttribute('data-lucide', 'check-circle-2');
+        toastIcon.className = 'w-5 h-5 text-teal-400';
+      }
+      lucide.createIcons();
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 4000);
+    }
+
+    function formatNumber(n) {
+      const val = Number(n) || 0;
+      if (val >= 1e9) return (val / 1e9).toFixed(1) + 'B';
+      if (val >= 1e6) return (val / 1e6).toFixed(1) + 'M';
+      if (val >= 1e3) return (val / 1e3).toFixed(1) + 'K';
+      return String(val);
+    }
+
+    // Check application status
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Gemini
+        const geminiEl = document.getElementById('status-gemini');
+        const cfgGemini = document.getElementById('cfg-gemini-badge');
+        if (data.gemini_ready) {
+          geminiEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-emerald-400 font-medium">Gemini AI (${data.gemini_model})</span>`;
+          cfgGemini.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+          cfgGemini.textContent = `Configurado (${data.gemini_model})`;
+        } else {
+          geminiEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span class="text-rose-400">Gemini: Chave Ausente</span>`;
+          cfgGemini.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20';
+          cfgGemini.textContent = 'Chave Ausente no .env';
+        }
+
+        // Instagram
+        const instaEl = document.getElementById('status-instagram');
+        const cfgInsta = document.getElementById('cfg-instagram-badge');
+        if (data.instagram_ready) {
+          const userLabel = data.instagram_username ? `@${data.instagram_username}` : 'Autenticado';
+          instaEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-emerald-400 font-medium">Instagram: ${userLabel}</span>`;
+          cfgInsta.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+          cfgInsta.textContent = `Conectado (${userLabel})`;
+        } else {
+          instaEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span class="text-amber-400">Instagram: Não Autenticado</span>`;
+          cfgInsta.className = 'px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20';
+          cfgInsta.textContent = 'Sem Sessão';
+        }
+      } catch (err) {
+        console.error('Falha ao verificar status:', err);
+      }
+    }
+
+    // Execute Niche Search
+    async function executeSearch(e) {
+      e.preventDefault();
+      const query = document.getElementById('search-query').value.strip ? document.getElementById('search-query').value.strip() : document.getElementById('search-query').value;
+      const limit = Number(document.getElementById('search-limit').value);
+      const timeframe = document.getElementById('search-timeframe').value;
+      const topTranscribe = Number(document.getElementById('search-top-transcribe').value);
+      const language = document.getElementById('search-language').value;
+      const rounds = Number(document.getElementById('search-rounds').value);
+
+      const loadingEl = document.getElementById('search-loading');
+      const resultsEl = document.getElementById('search-results');
+      const submitBtn = document.getElementById('btn-search-submit');
+
+      loadingEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query,
+            limit,
+            timeframe,
+            top_transcribe: topTranscribe,
+            language,
+            rounds,
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Erro desconhecido na pesquisa.');
+        }
+
+        renderSearchResults(data);
+        showToast('Pesquisa de nicho concluída com sucesso!');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        loadingEl.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderSearchResults(data) {
+      const resultsEl = document.getElementById('search-results');
+      const s = data.strategy;
+      const reels = data.reels || [];
+      const analysis = data.analysis;
+
+      let html = '';
+
+      // Export Bar
+      if (data.reports) {
+        html += `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <i data-lucide="download" class="w-4 h-4 text-teal-400"></i>
+              <span>Relatórios gerados para esta pesquisa:</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/api/reports/download/${data.reports.markdown}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Markdown (.md)
+              </a>
+              <a href="/api/reports/download/${data.reports.csv}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="table" class="w-3.5 h-3.5"></i> Planilha (.csv)
+              </a>
+              <a href="/api/reports/download/${data.reports.json}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="code" class="w-3.5 h-3.5"></i> JSON (.json)
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      // Strategy Card
+      if (s) {
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="brain-circuit" class="w-5 h-5 text-teal-400"></i> Estratégia do Agente Gemini
+            </h3>
+            <p class="text-sm text-slate-300 bg-slate-950 p-4 rounded-xl border border-slate-800">${s.intent_summary}</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <span class="text-slate-400 font-medium block mb-2">Hashtags Principais:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${s.primary_hashtags.map(h => `<span class="px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-300 border border-teal-500/20 font-mono">#${h}</span>`).join('')}
+                </div>
+              </div>
+              <div>
+                <span class="text-slate-400 font-medium block mb-2">Hashtags Cauda Longa:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${s.long_tail_hashtags.map(h => `<span class="px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">#${h}</span>`).join('')}
+                </div>
+              </div>
+              <div>
+                <span class="text-slate-400 font-medium block mb-2">Termos de Busca Textual:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${s.search_keywords.map(k => `<span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 font-mono">${k}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Transcripts Panel
+      const transcribed = reels.filter(r => r.transcript);
+      if (transcribed.length > 0) {
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="mic" class="w-5 h-5 text-emerald-400"></i> Roteiros Transcritos com Timestamps (Whisper)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              ${transcribed.map((r, i) => `
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-xs mb-2">
+                      <span class="font-bold text-teal-400">Reel #${i+1} (${r.code})</span>
+                      <span class="text-slate-400">${r.duration ? r.duration.toFixed(1) + 's' : ''}</span>
+                    </div>
+                    <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
+                      <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1">Gancho Inicial (0-3s):</span>
+                      "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
+                    </div>
+                    <div class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
+                      ${r.transcript.segments.map(seg => `
+                        <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
+                      `).join('')}
+                    </div>
+                  </div>
+                  <a href="${r.url}" target="_blank" class="w-full mt-3 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-center rounded-lg text-xs font-medium text-slate-200 flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Instagram
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Reels Table
+      html += `
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="flame" class="w-5 h-5 text-pink-500"></i> Top Reels Ranqueados por Viral Score (${reels.length} vídeos)
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="text-slate-400 bg-slate-950/60 uppercase border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-3 text-center">#</th>
+                  <th class="py-3 px-3">Criador</th>
+                  <th class="py-3 px-3">Data</th>
+                  <th class="py-3 px-3 text-right">Views</th>
+                  <th class="py-3 px-3 text-right">Likes</th>
+                  <th class="py-3 px-3 text-right">Comments</th>
+                  <th class="py-3 px-3 text-right">Engajamento</th>
+                  <th class="py-3 px-3 text-right">Viral Score</th>
+                  <th class="py-3 px-3 text-center">Áudio</th>
+                  <th class="py-3 px-3 text-center">Link</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-mono">
+                ${reels.map((r, i) => {
+                  const scoreBadge = i === 0 ? 'text-amber-400 font-bold' : i < 3 ? 'text-teal-400 font-bold' : 'text-slate-300';
+                  const dateStr = r.taken_at ? new Date(r.taken_at).toLocaleDateString('pt-BR') : '-';
+                  const hasTranscript = r.transcript ? '<span class="text-emerald-400 font-bold">✓</span>' : '<span class="text-slate-600">-</span>';
+                  return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                      <td class="py-3 px-3 text-center font-bold text-slate-500">${i+1}</td>
+                      <td class="py-3 px-3 font-sans font-medium text-white">@${r.author_username}</td>
+                      <td class="py-3 px-3 text-slate-400">${dateStr}</td>
+                      <td class="py-3 px-3 text-right text-cyan-400">${formatNumber(r.metrics.views)}</td>
+                      <td class="py-3 px-3 text-right text-emerald-400">${formatNumber(r.metrics.likes)}</td>
+                      <td class="py-3 px-3 text-right text-yellow-400">${formatNumber(r.metrics.comments)}</td>
+                      <td class="py-3 px-3 text-right text-purple-400">${r.metrics.engagement_rate.toFixed(2)}%</td>
+                      <td class="py-3 px-3 text-right ${scoreBadge}">${r.metrics.viral_score.toFixed(1)}</td>
+                      <td class="py-3 px-3 text-center">${hasTranscript}</td>
+                      <td class="py-3 px-3 text-center">
+                        <a href="${r.url}" target="_blank" class="p-1 rounded hover:bg-slate-800 text-teal-400 inline-block" title="Abrir Reel">
+                          <i data-lucide="external-link" class="w-4 h-4"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      // AI Analysis
+      if (analysis) {
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i> Engenharia Reversa do Nicho (IA Gemini)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-teal-400 block text-sm">Padrões de Ganchos (0s a 3s):</span>
+                <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                  ${analysis.common_hook_patterns.map(h => `<li>${h}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-purple-400 block text-sm">Formatos e Temas Dominantes:</span>
+                <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                  ${analysis.content_themes.map(t => `<li>${t}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-emerald-400 block text-sm">Inteligência de Áudio e Fala:</span>
+                <p class="text-slate-300">${analysis.audio_insights}</p>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-pink-400 block text-sm">Estratégia de Legendas & CTA:</span>
+                <p class="text-slate-300">${analysis.caption_strategy}</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs">
+              <span class="font-bold text-teal-400 block text-sm mb-2">Recomendações Práticas para Criadores:</span>
+              <ol class="space-y-1.5 text-slate-200 list-decimal list-inside">
+                ${analysis.actionable_recommendations.map(r => `<li>${r}</li>`).join('')}
+              </ol>
+            </div>
+          </div>
+        `;
+      }
+
+      resultsEl.innerHTML = html;
+      resultsEl.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // Execute Profile Audit
+    async function executeProfile(e) {
+      e.preventDefault();
+      const rawUser = document.getElementById('profile-username').value;
+      const username = rawUser.replace('@', '').trim();
+      const limit = Number(document.getElementById('profile-limit').value);
+      const timeframe = document.getElementById('profile-timeframe').value;
+      const topTranscribe = Number(document.getElementById('profile-top-transcribe').value);
+      const language = document.getElementById('profile-language').value;
+
+      const loadingEl = document.getElementById('profile-loading');
+      const resultsEl = document.getElementById('profile-results');
+      const submitBtn = document.getElementById('btn-profile-submit');
+
+      loadingEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            limit,
+            timeframe,
+            top_transcribe: topTranscribe,
+            language,
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Erro desconhecido na auditoria.');
+        }
+
+        renderProfileResults(data);
+        showToast(`Auditoria de @${username} concluída com sucesso!`);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        loadingEl.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderProfileResults(data) {
+      const resultsEl = document.getElementById('profile-results');
+      const p = data.profile;
+      const reels = data.reels || [];
+      const analysis = data.analysis;
+
+      let html = '';
+
+      // Export Bar
+      if (data.reports) {
+        html += `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <i data-lucide="download" class="w-4 h-4 text-teal-400"></i>
+              <span>Relatórios gerados para @${p.username}:</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="/api/reports/download/${data.reports.markdown}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Markdown (.md)
+              </a>
+              <a href="/api/reports/download/${data.reports.csv}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="table" class="w-3.5 h-3.5"></i> Planilha (.csv)
+              </a>
+              <a href="/api/reports/download/${data.reports.json}" download class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                <i data-lucide="code" class="w-3.5 h-3.5"></i> JSON (.json)
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      // Profile Card
+      html += `
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div class="flex items-center space-x-4">
+              <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-indigo-500 flex items-center justify-center font-bold text-xl text-white shadow-lg">
+                ${p.username.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  @${p.username}
+                  ${p.is_verified ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-blue-400 fill-blue-400 text-slate-900"></i>' : ''}
+                </h3>
+                <p class="text-xs text-slate-400">${p.full_name || ''} ${p.category ? '• ' + p.category : ''}</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-6 text-center">
+              <div>
+                <span class="block text-base font-bold text-white">${formatNumber(p.follower_count)}</span>
+                <span class="text-[11px] text-slate-500 uppercase tracking-wider">Seguidores</span>
+              </div>
+              <div>
+                <span class="block text-base font-bold text-white">${p.following_count.toLocaleString()}</span>
+                <span class="text-[11px] text-slate-500 uppercase tracking-wider">Seguindo</span>
+              </div>
+              <div>
+                <span class="block text-base font-bold text-white">${p.media_count.toLocaleString()}</span>
+                <span class="text-[11px] text-slate-500 uppercase tracking-wider">Publicações</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-xs text-slate-300">
+            <span class="font-bold text-slate-400 block mb-1">Biografia:</span>
+            <p class="whitespace-pre-line bg-slate-950 p-3.5 rounded-xl border border-slate-800 font-sans">${p.biography || 'Sem biografia cadastrada.'}</p>
+            ${p.external_url ? `<a href="${p.external_url}" target="_blank" class="inline-flex items-center gap-1.5 text-teal-400 hover:underline mt-2"><i data-lucide="link" class="w-3.5 h-3.5"></i> ${p.external_url}</a>` : ''}
+          </div>
+        </div>
+      `;
+
+      // Transcripts Panel
+      const transcribed = reels.filter(r => r.transcript);
+      if (transcribed.length > 0) {
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="mic" class="w-5 h-5 text-emerald-400"></i> Roteiros Transcritos com Timestamps dos Top Reels
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              ${transcribed.map((r, i) => `
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between text-xs mb-2">
+                      <span class="font-bold text-teal-400">Reel #${i+1} (${r.code})</span>
+                      <span class="text-slate-400">${r.duration ? r.duration.toFixed(1) + 's' : ''}</span>
+                    </div>
+                    <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
+                      <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1">Gancho Inicial (0-3s):</span>
+                      "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
+                    </div>
+                    <div class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
+                      ${r.transcript.segments.map(seg => `
+                        <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
+                      `).join('')}
+                    </div>
+                  </div>
+                  <a href="${r.url}" target="_blank" class="w-full mt-3 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-center rounded-lg text-xs font-medium text-slate-200 flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Instagram
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Reels Table
+      html += `
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="video" class="w-5 h-5 text-teal-400"></i> Desempenho dos Reels Analisados (${reels.length} vídeos)
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="text-slate-400 bg-slate-950/60 uppercase border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-3 text-center">#</th>
+                  <th class="py-3 px-3">Código</th>
+                  <th class="py-3 px-3">Data</th>
+                  <th class="py-3 px-3 text-right">Views</th>
+                  <th class="py-3 px-3 text-right">Likes</th>
+                  <th class="py-3 px-3 text-right">Comments</th>
+                  <th class="py-3 px-3 text-right">Engajamento</th>
+                  <th class="py-3 px-3 text-right">Viral Score</th>
+                  <th class="py-3 px-3 text-center">Áudio</th>
+                  <th class="py-3 px-3 text-center">Link</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-mono">
+                ${reels.map((r, i) => {
+                  const scoreBadge = i === 0 ? 'text-amber-400 font-bold' : i < 3 ? 'text-teal-400 font-bold' : 'text-slate-300';
+                  const dateStr = r.taken_at ? new Date(r.taken_at).toLocaleDateString('pt-BR') : '-';
+                  const hasTranscript = r.transcript ? '<span class="text-emerald-400 font-bold">✓</span>' : '<span class="text-slate-600">-</span>';
+                  return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                      <td class="py-3 px-3 text-center font-bold text-slate-500">${i+1}</td>
+                      <td class="py-3 px-3 font-sans font-medium text-white">${r.code}</td>
+                      <td class="py-3 px-3 text-slate-400">${dateStr}</td>
+                      <td class="py-3 px-3 text-right text-cyan-400">${formatNumber(r.metrics.views)}</td>
+                      <td class="py-3 px-3 text-right text-emerald-400">${formatNumber(r.metrics.likes)}</td>
+                      <td class="py-3 px-3 text-right text-yellow-400">${formatNumber(r.metrics.comments)}</td>
+                      <td class="py-3 px-3 text-right text-purple-400">${r.metrics.engagement_rate.toFixed(2)}%</td>
+                      <td class="py-3 px-3 text-right ${scoreBadge}">${r.metrics.viral_score.toFixed(1)}</td>
+                      <td class="py-3 px-3 text-center">${hasTranscript}</td>
+                      <td class="py-3 px-3 text-center">
+                        <a href="${r.url}" target="_blank" class="p-1 rounded hover:bg-slate-800 text-teal-400 inline-block">
+                          <i data-lucide="external-link" class="w-4 h-4"></i>
+                        </a>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      // AI Analysis
+      if (analysis) {
+        const pos = analysis.positioning;
+        const spoken = analysis.spoken_scripts;
+        html += `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i> Diagnóstico Completo do Perfil e Roteiros (IA Gemini)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-teal-400 block text-sm">Posicionamento & Proposta de Valor:</span>
+                <p class="text-slate-300">${pos.value_proposition_clarity}</p>
+                <div class="pt-2">
+                  <span class="text-slate-400 font-medium block">Público-Alvo:</span>
+                  <p class="text-slate-300">${pos.target_audience}</p>
+                </div>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-purple-400 block text-sm">Avaliação da Bio & CTA:</span>
+                <p class="text-slate-300 mb-2">${pos.bio_cta_evaluation}</p>
+                <span class="text-slate-400 font-medium block">Sugestões de Melhoria:</span>
+                <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                  ${pos.bio_improvements.map(i => `<li>${i}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-emerald-400 block text-sm">Ganchos Falados nos 3s:</span>
+                <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                  ${spoken.first_3s_hooks_analysis.map(h => `<li>${h}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <span class="font-bold text-pink-400 block text-sm">Fórmula de Roteiro Identificada:</span>
+                <p class="text-slate-300 mb-2 font-mono italic">${spoken.script_structure_formula}</p>
+                <span class="text-slate-400 font-medium block">Ritmo de Fala:</span>
+                <p class="text-slate-300">${spoken.speech_pacing_and_retention}</p>
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+              <span class="font-bold text-amber-400 block text-sm mb-2">Template Prático de Roteiro Inspirado no Perfil:</span>
+              <pre class="text-slate-200 whitespace-pre-line font-sans bg-slate-950/60 p-3.5 rounded-lg border border-slate-800">${analysis.recommended_script_template}</pre>
+            </div>
+          </div>
+        `;
+      }
+
+      resultsEl.innerHTML = html;
+      resultsEl.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // Reports list
+    async function loadReportsList() {
+      const tbody = document.getElementById('reports-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-500 font-sans">Carregando relatórios...</td></tr>';
+
+      try {
+        const res = await fetch('/api/reports');
+        const items = await res.json();
+
+        if (!items || items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-500 font-sans">Nenhum relatório encontrado na pasta outputs/.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(f => {
+          const badgeColor = f.extension === 'md' ? 'bg-teal-500/10 text-teal-300 border-teal-500/20' : f.extension === 'csv' ? 'bg-purple-500/10 text-purple-300 border-purple-500/20' : 'bg-amber-500/10 text-amber-300 border-amber-500/20';
+          const sizeKb = (f.size_bytes / 1024).toFixed(1) + ' KB';
+          return `
+            <tr class="hover:bg-slate-800/30 transition">
+              <td class="py-3 px-4 text-white font-medium">${f.filename}</td>
+              <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${badgeColor}">${f.extension}</span></td>
+              <td class="py-3 px-4 text-slate-400">${sizeKb}</td>
+              <td class="py-3 px-4 text-slate-400">${f.modified_at}</td>
+              <td class="py-3 px-4 text-right">
+                <a href="/api/reports/download/${f.filename}" download class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-sans font-medium inline-flex items-center gap-1.5 transition">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar
+                </a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-rose-400 font-sans">Falha ao carregar relatórios: ${err.message}</td></tr>`;
+      }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      checkStatus();
+    });
+  </script>
+</body>
+</html>

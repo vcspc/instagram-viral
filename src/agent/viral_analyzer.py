@@ -23,15 +23,24 @@ class ViralAnalyzer:
 
         reels_data = []
         for i, reel in enumerate(top_reels, 1):
-            reels_data.append(
-                f"[Reel #{i}]\n"
-                f"- Link: {reel.url}\n"
-                f"- Criador: @{reel.author_username}\n"
-                f"- Duração: {reel.duration:.1f}s\n"
-                f"- Views: {reel.metrics.views} | Likes: {reel.metrics.likes} | Comentários: {reel.metrics.comments}\n"
-                f"- Score Viral: {reel.metrics.viral_score} | Taxa Engajamento: {reel.metrics.engagement_rate}%\n"
-                f"- Legenda: {reel.caption[:350]}...\n"
-            )
+            reel_lines = [
+                f"[Reel #{i}]",
+                f"- Link: {reel.url}",
+                f"- Criador: @{reel.author_username}",
+                f"- Duração: {reel.duration:.1f}s",
+                f"- Views: {reel.metrics.views} | Likes: {reel.metrics.likes} | Comentários: {reel.metrics.comments}",
+                f"- Score Viral: {reel.metrics.viral_score} | Taxa Engajamento: {reel.metrics.engagement_rate}%",
+                f"- Legenda: {(reel.caption or '')[:350]}...",
+            ]
+
+            if reel.transcript:
+                t = reel.transcript
+                reel_lines.append(f"- GANCHO FALADO (0s a 3s): \"{t.hook_text_3s}\"")
+                reel_lines.append("- ROTEIRO FALADO COM TIMESTAMPS:")
+                for seg in t.segments:
+                    reel_lines.append(f"  {seg.timestamp_formatted} {seg.text}")
+
+            reels_data.append("\n".join(reel_lines))
 
         prompt = f"""
         Nicho pesquisado: "{niche_topic}"

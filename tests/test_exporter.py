@@ -48,6 +48,17 @@ class TestExporter(unittest.TestCase):
                 actionable_recommendations=["Filme a textura cortando o bolo nos primeiros 2s"],
             )
 
+            from src.models.instagram import ReelTranscript, TranscriptSegment
+
+            reels[0].transcript = ReelTranscript(
+                text="Aprenda a fazer o bolo perfeito em 3 passos.",
+                segments=[
+                    TranscriptSegment(start=0.0, end=2.5, text="Aprenda a fazer o bolo perfeito", timestamp_formatted="[00:00 - 00:02]")
+                ],
+                duration=35.0,
+                hook_text_3s="Aprenda a fazer o bolo perfeito",
+            )
+
             paths = exporter.export_all(
                 query="bolos de cenoura fáceis",
                 strategy=strategy,
@@ -63,6 +74,11 @@ class TestExporter(unittest.TestCase):
             self.assertIn("chef_maria", md_content)
             self.assertIn("CxYz123", md_content)
             self.assertIn("Não faça bolo antes de ver isso", md_content)
+            self.assertIn("Aprenda a fazer o bolo perfeito", md_content)
+
+            csv_content = paths["csv"].read_text(encoding="utf-8")
+            self.assertIn("has_transcription", csv_content)
+            self.assertIn("Aprenda a fazer o bolo perfeito", csv_content)
 
 
 if __name__ == "__main__":

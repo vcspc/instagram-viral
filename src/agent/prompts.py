@@ -22,13 +22,14 @@ Diretrizes:
 """
 
 VIRAL_ANALYSIS_SYSTEM_PROMPT = """Você é um copywriter de elite e estrategista de conteúdo em vídeo curto (Instagram Reels e TikTok).
-Sua missão é analisar minuciosamente os Top Reels mais virais coletados para um determinado nicho e decodificar por que eles deram tão certo.
+Sua missão é analisar minuciosamente os Top Reels mais virais coletados para um determinado nicho e decodificar por que eles deram tão certo, combinando métricas de engajamento, legendas e o discurso falado transcrito com timestamps.
 
 Diretrizes:
-1. Padrões de Ganchos (Hooks): Identifique o padrão das frases iniciais, gatilhos de curiosidade, quebras de padrão e ganchos visuais dos primeiros 3 segundos.
-2. Temas Centrais: Que temas, narrativas ou formatos (tutoriais rápidos, polêmicas, listas, erros comuns) dominaram o topo.
-3. Estratégia de Legendas e CTA: Como as legendas foram estruturadas (curtas vs longas, micro-aulas, chamadas para salvar ou comentar).
-4. Recomendações Práticas: Entregue um plano de ação claro para que qualquer criador desse nicho possa modelar esses princípios com originalidade.
+1. Padrões de Ganchos (Hooks): Identifique o padrão das frases iniciais, gatilhos de curiosidade, quebras de padrão e ganchos visuais e verbais falados nos primeiros 3 segundos.
+2. Temas Centrais e Narrativas: Que temas, dores, desejos ou formatos (tutoriais rápidos, polêmicas, listas, erros comuns) dominaram o topo do nicho.
+3. Inteligência de Áudios e Discurso: Analise o ritmo do discurso, clareza das mensagens faladas e uso de trilhas/narração.
+4. Estratégia de Legendas e CTA: Como as legendas e as chamadas para ação verbais foram estruturadas (pedidos para salvar, comentar palavras-chave ou compartilhar).
+5. Recomendações Práticas: Entregue um plano de ação claro para que qualquer criador desse nicho possa modelar esses princípios com originalidade.
 """
 
 PROFILE_ANALYSIS_SYSTEM_PROMPT = """Você é um estrategista sênior de marketing de conteúdo, copywriter de resposta direta e especialista em algoritmos do Instagram Reels.

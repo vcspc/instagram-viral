@@ -85,19 +85,42 @@ class ReportExporter:
                 *[f"- **{hook}**" for hook in analysis.common_hook_patterns],
                 "\n### Temas e Formatos em Alta:",
                 *[f"- {theme}" for theme in analysis.content_themes],
-                "\n### Inteligência de Áudios:",
+                "\n### Inteligência de Áudios e Discurso:",
                 f"{analysis.audio_insights}\n",
                 "### Estratégia de Legendas e CTA:",
                 f"{analysis.caption_strategy}\n",
-                "### Recomendações Práticas para Criadores:",
+                "### Recomendações Práticas para Criadores do Nicho:",
                 *[f"1. {rec}" for rec in analysis.actionable_recommendations],
                 "\n---",
             ])
 
+        # Seção de Transcrições com Timestamps (se houver Reels transcritos)
+        transcribed_reels = [r for r in reels if r.transcript]
+        if transcribed_reels:
+            lines.append("## 3. Roteiros Transcritos com Timestamps dos Melhores Reels do Nicho\n")
+            for idx, r in enumerate(transcribed_reels, 1):
+                t = r.transcript
+                assert t is not None
+                date_str = r.taken_at.strftime("%d/%m/%Y") if r.taken_at else "-"
+                lines.extend([
+                    f"### Reel #{idx}: [{r.code}]({r.url}) - @{r.author_username}",
+                    f"- **Data:** {date_str} | **Duração:** {t.duration:.1f}s | **Idioma:** {t.language.upper()}",
+                    f"- **Views:** {format_number(r.metrics.views)} | **Likes:** {format_number(r.metrics.likes)} | **Comentários:** {format_number(r.metrics.comments)}",
+                    f"- **Viral Score:** **{r.metrics.viral_score:.1f}** | **Taxa de Engajamento:** {r.metrics.engagement_rate:.2f}%\n",
+                    f"> **Gancho Falado (0s a 3s):** *\"{t.hook_text_3s}\"*\n",
+                    "**Roteiro Falado Completo:**",
+                    "```text",
+                    *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
+                    "```\n",
+                ])
+            lines.append("---\n")
+            lines.append("## 4. Tabela dos Reels Mais Virais Encontrados\n")
+        else:
+            lines.append("## 3. Tabela dos Reels Mais Virais Encontrados\n")
+
         lines.extend([
-            "## 3. Tabela dos Reels Mais Virais Encontrados\n",
-            "| # | Criador | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Link Direto | Origem |",
-            "|---|---|---|---|---|---|---|---|---|---|",
+            "| # | Criador | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Transcrito? | Link Direto | Origem |",
+            "|---|---|---|---|---|---|---|---|---|---|---|",
         ])
 
         for idx, reel in enumerate(reels, 1):
@@ -109,8 +132,9 @@ class ReportExporter:
             link_md = f"[{reel.code}]({reel.url})"
             author_md = f"[@{reel.author_username}](https://www.instagram.com/{reel.author_username}/)"
             date_str = reel.taken_at.strftime("%d/%m/%Y") if reel.taken_at else "-"
+            has_t = "Sim" if reel.transcript else "Não"
             lines.append(
-                f"| {idx} | {author_md} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {link_md} | {reel.source_term} |"
+                f"| {idx} | {author_md} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {has_t} | {link_md} | {reel.source_term} |"
             )
 
         file_path.write_text("\n".join(lines), encoding="utf-8")
@@ -228,6 +252,9 @@ class ReportExporter:
             "engagement_rate_pct",
             "viral_score",
             "duration_sec",
+            "has_transcription",
+            "hook_text_3s",
+            "full_transcription",
             "source_term",
             "caption_preview",
         ]
@@ -237,6 +264,9 @@ class ReportExporter:
             writer.writeheader()
             for idx, reel in enumerate(reels, 1):
                 clean_caption = (reel.caption or "").replace("\n", " ").replace("\r", " ")[:200]
+                has_t = bool(reel.transcript)
+                hook_3s = reel.transcript.hook_text_3s if reel.transcript else ""
+                full_t = reel.transcript.text if reel.transcript else ""
                 writer.writerow({
                     "rank": idx,
                     "code": reel.code,
@@ -249,6 +279,9 @@ class ReportExporter:
                     "engagement_rate_pct": reel.metrics.engagement_rate,
                     "viral_score": reel.metrics.viral_score,
                     "duration_sec": reel.duration,
+                    "has_transcription": has_t,
+                    "hook_text_3s": hook_3s,
+                    "full_transcription": full_t,
                     "source_term": reel.source_term,
                     "caption_preview": clean_caption,
                 })

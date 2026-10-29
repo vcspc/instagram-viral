@@ -154,15 +154,40 @@ Para evitar que o Instagram invalide a sessão do seu navegador ao detectar dive
 
 ## Modos de Operação da Ferramenta
 
-A ferramenta possui dois modos principais de pesquisa:
+A ferramenta possui três modos de uso:
 
 ---
 
-### Modo 1: Pesquisa Temática por Nicho (`search`)
-Pesquisa Reels virais em qualquer nicho em linguagem natural, expandindo em hashtags e termos semânticos com o Gemini:
+### Modo 1: Interface Visual Web / Dashboard (`ui` ou `web`)
+Inicia o painel gráfico completo no navegador com visual moderno em tema escuro, permitindo executar todas as funções da ferramenta visualmente, visualizar os Reels com métricas e abrir relatórios com 1 clique:
 
 ```bash
-python -m src.main search -q "bolos decorados simples" -t 1m -l 20
+python -m src.main ui
+```
+*(Também aceita o alias: `python -m src.main web`). O navegador abre automaticamente em `http://127.0.0.1:8000`.*
+
+#### O que é possível fazer no Front-End:
+1. **Pesquisa por Nicho:** Formulário visual com filtros de período (`1w`, `1m`, `3m`, etc.), limite de vídeos, quantidade de transcrições e seletor de idioma. Exibe os cartões da estratégia do Gemini, tabela ranqueada com links diretos dos Reels, painel de transcrições com timestamps e análise qualitativa da IA.
+2. **Auditoria de Perfil:** Cartão do criador com seguidores, seguindo, contagem de posts, biografia formatada, tabela dos Reels, transcrições com timestamps e diagnóstico completo de posicionamento e roteiro.
+3. **Central de Relatórios & Downloads:** Lista todos os relatórios gerados em `outputs/`, com data, tamanho, formato e botões de download direto para **Markdown (`.md`)**, **Planilha (`.csv`)** e **JSON (`.json`)**.
+4. **Status das Integrações:** Indicadores em tempo real da conexão com o Instagram e prontidão da chave do Gemini.
+
+#### Parâmetros da CLI (`ui` / `web`):
+- `-h, --host TEXT`: Endereço de IP local (padrão: `127.0.0.1`).
+- `-p, --port INTEGER`: Porta TCP do servidor web (padrão: `8000`).
+- `--no-browser`: Inicia o servidor web sem abrir automaticamente o navegador.
+
+---
+
+### Modo 2: Pesquisa Temática por Nicho via Terminal (`search`)
+Pesquisa Reels virais em qualquer nicho em linguagem natural, expandindo em hashtags e termos semânticos com o Gemini. Opcionalmente **baixa e transcreve com timestamps os vídeos mais virais do nicho** para gerar um diagnóstico completo de copywriting e roteiros:
+
+```bash
+# Busca com transcrição dos 3 melhores Reels em português:
+python -m src.main search -q "bolos decorados simples" -t 1m -l 20 -n 3
+
+# Busca rápida sem transcrição de áudio:
+python -m src.main search -q "investimentos" -n 0
 ```
 
 #### Parâmetros da CLI (`search`):
@@ -170,6 +195,9 @@ python -m src.main search -q "bolos decorados simples" -t 1m -l 20
 - `-t, --timeframe TEXT`: Filtro por data de postagem: `'1w'` (1 semana), `'1m'` (1 mês), `'3m'` (3 meses), `'6m'` (6 meses), `'1y'` (1 ano), dias como `'7d'`, `'15d'`, ou `'all'` para todo o período (padrão: `all`).
 - `-l, --limit INTEGER`: Quantidade de Reels únicos a coletar e analisar (padrão: 20).
 - `-r, --rounds INTEGER`: Quantidade máxima de rodadas de refinamento do agente Gemini (padrão: 2).
+- `-n, --top-transcribe INTEGER`: Quantidade dos Reels mais virais do nicho para baixar e transcrever com Whisper (padrão: 3).
+- `-w, --whisper-model TEXT`: Tamanho do modelo Whisper (`base`, `tiny`, `small`) (padrão: `base`).
+- `--language, --lang TEXT`: Idioma para transcrição do Whisper (`pt` por padrão, `en`, `es`, `auto`).
 - `--no-analysis`: Pula a engenharia reversa qualitativa do Gemini e gera apenas a tabela com métricas.
 - `-v, --verbose`: Exibe logs detalhados de depuração da API.
 

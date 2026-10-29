@@ -79,6 +79,21 @@ def search(
         "-t",
         help="Filtrar Reels por período: '1w' (1 semana), '1m' (1 mês), '3m' (3 meses), '1y' (1 ano) ou dias como '7d'.",
     ),
+    top_transcribe: int = typer.Option(
+        3,
+        "--top-transcribe",
+        "-n",
+        help="Quantidade dos Reels mais virais do nicho para baixar e transcrever com Whisper.",
+    ),
+    whisper_model: str = typer.Option(
+        "base", "--whisper-model", "-w", help="Modelo Whisper: 'base', 'tiny' ou 'small'."
+    ),
+    language: str = typer.Option(
+        "pt",
+        "--language",
+        "--lang",
+        help="Idioma para transcrição do Whisper: 'pt' (padrão, português brasileiro), 'en', 'es', etc., ou 'auto' para detecção automática.",
+    ),
     no_analysis: bool = typer.Option(False, "--no-analysis", help="Pula a análise qualitativa final do Gemini."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Exibe logs detalhados de depuração."),
 ) -> None:
@@ -243,7 +258,29 @@ def search(
     console.print("\n")
     render_reels_table(ranked_reels, limit=min(len(ranked_reels), 15))
 
-    # 7. Engenharia Reversa com Gemini (Top 10)
+    # 7. Download e Transcrição com Whisper dos Top N Reels do Nicho
+    if top_transcribe > 0:
+        console.print(f"\n[bold cyan]Baixando e transcrevendo os {min(top_transcribe, len(ranked_reels))} Reels mais virais do nicho via Whisper ({language.upper()})...[/bold cyan]")
+        audio_mgr = AudioTranscriptionManager(
+            client=client,
+            whisper_model=whisper_model,
+            language=language,
+        )
+
+        with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
+            task = progress.add_task(description="Iniciando processamento de áudio...", total=None)
+
+            def update_progress_msg(msg: str):
+                progress.update(task, description=msg)
+
+            ranked_reels = audio_mgr.process_top_reels(
+                ranked_reels, top_n=top_transcribe, status_callback=update_progress_msg
+            )
+
+        console.print("\n")
+        render_transcripts_panel(ranked_reels)
+
+    # 8. Engenharia Reversa com Gemini (Top 10)
     analysis = None
     if not no_analysis and len(ranked_reels) > 0:
         with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
@@ -257,7 +294,7 @@ def search(
             console.print("\n")
             render_analysis_panel(analysis)
 
-    # 8. Exportação dos Relatórios
+    # 9. Exportação dos Relatórios
     paths = exporter.export_all(
         query=query,
         strategy=strategy,
@@ -451,4 +488,41 @@ def profile(
     console.print(f"  [cyan]Planilha CSV:[/cyan] {paths['csv']}")
     console.print(f"  [cyan]JSON Estruturado:[/cyan] {paths['json']}")
     console.print("\n[dim]Abra o arquivo Markdown para visualizar todos os roteiros transcritos e links dos Reels.[/dim]\n")
+
+
+@app.command(name="ui")
+def ui(
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Endereço de IP do servidor web local."),
+    port: int = typer.Option(8000, "--port", "-p", help="Porta TCP do servidor web."),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Não abre automaticamente o navegador ao iniciar."),
+) -> None:
+    """Inicia a interface visual web (Dashboard) para pesquisa, transcrição e relatórios."""
+    import webbrowser
+    from src.web.server import run_server
+
+    render_banner()
+    url = f"http://{host}:{port}"
+    console.print(f"\n[bold green]Iniciando Interface Visual Web:[/bold green] [underline cyan]{url}[/underline cyan]")
+    console.print("[dim]Pressione CTRL+C no terminal para encerrar o servidor web.[/dim]\n")
+
+    if not no_browser:
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+
+    try:
+        run_server(host=host, port=port)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Servidor web encerrado pelo usuário.[/yellow]")
+
+
+@app.command(name="web")
+def web_alias(
+    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Endereço de IP do servidor web local."),
+    port: int = typer.Option(8000, "--port", "-p", help="Porta TCP do servidor web."),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Não abre automaticamente o navegador ao iniciar."),
+) -> None:
+    """Alias para o comando 'ui': inicia o painel web visual no navegador."""
+    ui(host=host, port=port, no_browser=no_browser)
 
