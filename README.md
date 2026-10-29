@@ -69,7 +69,56 @@ instagram-viral/
 cd "C:\Users\Vinícius\Documents\projetos\instagram-viral"
 ```
 
-### 2. Criar e ativar o ambiente virtual (recomendado)
+---
+
+## Instalação e Atualização Automatizada (Qualquer Sistema Operacional)
+
+A aplicação conta com um **instalador e atualizador nativo multiplataforma** (`install.py`) com atalhos de 1 clique para Windows, Linux e macOS:
+
+### No Windows:
+- **Instalar tudo com 1 clique:**
+  Dê um duplo clique no arquivo `install.bat` (ou execute no terminal `.\install.bat`).
+- **Atualizar a aplicação com 1 clique:**
+  Dê um duplo clique no arquivo `update.bat` (ou execute `.\update.bat`).
+- **Iniciar o painel visual:**
+  Dê um duplo clique em `run.bat` (ou execute `.\run.bat`).
+
+### No Linux e macOS:
+- **Instalar tudo:**
+  ```bash
+  chmod +x install.sh run.sh update.sh
+  ./install.sh
+  ```
+  *(Ele detecta pacotes ausentes como `ffmpeg` e os instala automaticamente se você tiver `apt`, `brew`, `dnf` ou `pacman`).*
+- **Atualizar a aplicação:**
+  ```bash
+  ./update.sh
+  ```
+- **Iniciar o painel visual:**
+  ```bash
+  ./run.sh
+  ```
+
+### Universal (via Python puro):
+Você pode rodar diretamente o instalador em qualquer ambiente:
+```bash
+# Instalação completa (ambiente virtual, dependências e testes):
+python install.py
+
+# Atualização da aplicação (git pull + pip upgrade):
+python install.py --update
+
+# Apenas checagem e diagnóstico do ambiente:
+python install.py --check
+```
+
+---
+
+## Instalação Manual (Passo a Passo)
+
+Caso prefira configurar manualmente:
+
+### 1. Criar e ativar o ambiente virtual (recomendado)
 ```bash
 python -m venv .venv
 # No Windows:
@@ -78,7 +127,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Instalar as dependências
+### 2. Instalar as dependências
 ```bash
 pip install -r requirements.txt
 ```
