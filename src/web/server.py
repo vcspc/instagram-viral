@@ -38,6 +38,8 @@ class AppServer:
 
         # APIs de Status e Credenciais
         self.app.router.add_get("/api/status", self.handle_status)
+        self.app.router.add_get("/api/settings", self.handle_get_settings)
+        self.app.router.add_post("/api/settings", self.handle_save_settings)
 
         # APIs de Operação (Pesquisa de Nicho e Auditoria de Perfil)
         self.app.router.add_post("/api/search", self.handle_search)
@@ -72,6 +74,89 @@ class AppServer:
             "has_session_file": session_file.exists(),
         }
         return web.json_response(data)
+
+    async def handle_get_settings(self, request: web.Request) -> web.Response:
+        """Retorna as configurações atuais para preenchimento do formulário na UI."""
+        return web.json_response({
+            "gemini_api_key": settings.gemini_api_key,
+            "has_gemini_key": bool(settings.gemini_api_key),
+            "gemini_model": settings.gemini_model,
+            "instagram_username": settings.instagram_username,
+            "has_instagram_password": bool(settings.instagram_password),
+            "instagram_sessionid": settings.instagram_sessionid or "",
+            "instagram_2fa_seed": settings.instagram_2fa_seed or "",
+            "request_delay_min": settings.request_delay_min,
+            "request_delay_max": settings.request_delay_max,
+        })
+
+    async def handle_save_settings(self, request: web.Request) -> web.Response:
+        """Salva as variáveis de ambiente diretamente no arquivo .env e atualiza a sessão."""
+        try:
+            body = await request.json()
+        except Exception:
+            return web.json_response({"error": "Corpo da requisição JSON inválido."}, status=400)
+
+        env_path = Path(".env")
+        updates = {}
+
+        if "gemini_api_key" in body and body["gemini_api_key"] is not None:
+            updates["GEMINI_API_KEY"] = str(body["gemini_api_key"]).strip()
+        if "gemini_model" in body and body["gemini_model"]:
+            updates["GEMINI_MODEL"] = str(body["gemini_model"]).strip()
+        if "instagram_username" in body and body["instagram_username"] is not None:
+            updates["INSTAGRAM_USERNAME"] = str(body["instagram_username"]).lstrip("@").strip()
+        if "instagram_password" in body and body["instagram_password"]:
+            updates["INSTAGRAM_PASSWORD"] = str(body["instagram_password"]).strip()
+        if "instagram_sessionid" in body:
+            updates["INSTAGRAM_SESSIONID"] = str(body["instagram_sessionid"] or "").strip()
+        if "instagram_2fa_seed" in body:
+            updates["INSTAGRAM_2FA_SEED"] = str(body["instagram_2fa_seed"] or "").strip()
+
+        # Grava no arquivo .env preservando comentários
+        self._update_env_file(env_path, updates)
+
+        # Atualiza a instância em memória
+        if "GEMINI_API_KEY" in updates:
+            settings.gemini_api_key = updates["GEMINI_API_KEY"]
+        if "GEMINI_MODEL" in updates:
+            settings.gemini_model = updates["GEMINI_MODEL"]
+        if "INSTAGRAM_USERNAME" in updates:
+            settings.instagram_username = updates["INSTAGRAM_USERNAME"]
+        if "INSTAGRAM_PASSWORD" in updates:
+            settings.instagram_password = updates["INSTAGRAM_PASSWORD"]
+        if "INSTAGRAM_SESSIONID" in updates:
+            settings.instagram_sessionid = updates["INSTAGRAM_SESSIONID"] or None
+        if "INSTAGRAM_2FA_SEED" in updates:
+            settings.instagram_2fa_seed = updates["INSTAGRAM_2FA_SEED"] or None
+
+        return web.json_response({
+            "success": True,
+            "message": "Configurações salvas com sucesso no arquivo .env!",
+        })
+
+    def _update_env_file(self, env_path: Path, updates: dict[str, str]) -> None:
+        """Escreve ou atualiza as chaves no arquivo .env mantendo a estrutura."""
+        lines = []
+        if env_path.exists():
+            lines = env_path.read_text(encoding="utf-8").splitlines()
+
+        updated_keys = set()
+        new_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and "=" in stripped:
+                key = stripped.split("=", 1)[0].strip()
+                if key in updates:
+                    new_lines.append(f"{key}={updates[key]}")
+                    updated_keys.add(key)
+                    continue
+            new_lines.append(line)
+
+        for k, v in updates.items():
+            if k not in updated_keys:
+                new_lines.append(f"{k}={v}")
+
+        env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
     async def handle_search(self, request: web.Request) -> web.Response:
         """Executa a pesquisa de nicho em background e retorna os resultados estruturados."""

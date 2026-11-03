@@ -270,37 +270,125 @@
     <!-- TAB 4: CONFIGURAÇÕES                       -->
     <!-- ========================================== -->
     <section id="tab-settings" class="hidden space-y-6">
-      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur max-w-2xl">
-        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
-          <i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i> Status das Integrações
-        </h2>
-        <p class="text-sm text-slate-400 mb-6">Configurações carregadas do arquivo local <code class="text-teal-400 font-mono">.env</code>.</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <div class="space-y-4 text-sm">
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-            <div>
-              <h4 class="font-semibold text-white">Google Gemini AI</h4>
-              <p class="text-xs text-slate-400 mt-0.5">Responsável pelo planejamento de busca e engenharia reversa de roteiros.</p>
-            </div>
-            <span id="cfg-gemini-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">Verificando...</span>
-          </div>
+        <!-- Coluna Esquerda: Status das Integrações -->
+        <div class="lg:col-span-1 space-y-4">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i> Status do Sistema
+            </h3>
 
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-            <div>
-              <h4 class="font-semibold text-white">Conexão com Instagram (instagrapi)</h4>
-              <p class="text-xs text-slate-400 mt-0.5">Sessão persistida na pasta local <code class="font-mono text-slate-300">sessions/</code>.</p>
-            </div>
-            <span id="cfg-instagram-badge" class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400">Verificando...</span>
-          </div>
+            <div class="space-y-3 text-xs">
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-white">Google Gemini AI</h4>
+                  <p class="text-[11px] text-slate-400">Geração de estratégia e roteiros.</p>
+                </div>
+                <span id="cfg-gemini-badge" class="px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-400">Verificando...</span>
+              </div>
 
-          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-            <div>
-              <h4 class="font-semibold text-white">FFmpeg & faster-whisper</h4>
-              <p class="text-xs text-slate-400 mt-0.5">Processamento de áudio 16kHz mono e transcrição local com timestamps.</p>
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-white">Instagram (instagrapi)</h4>
+                  <p class="text-[11px] text-slate-400">Sessão persistida em <code class="font-mono text-slate-300">sessions/</code>.</p>
+                </div>
+                <span id="cfg-instagram-badge" class="px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-400">Verificando...</span>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-white">FFmpeg & faster-whisper</h4>
+                  <p class="text-[11px] text-slate-400">Áudio 16kHz e transcrição local.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ativo (int8)</span>
+              </div>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Ativo (int8 CPU)</span>
           </div>
         </div>
+
+        <!-- Coluna Direita: Formulário de Configuração do .env -->
+        <div class="lg:col-span-2">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+            <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+              <i data-lucide="sliders" class="w-5 h-5 text-teal-400"></i> Variáveis de Ambiente & Credenciais
+            </h2>
+            <p class="text-sm text-slate-400 mb-6">Configure suas chaves e acessos sem precisar abrir o terminal ou editar arquivos de texto.</p>
+
+            <form id="form-settings" onsubmit="saveSettings(event)" class="space-y-5 text-xs">
+
+              <!-- Seção Gemini -->
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-bold text-sm text-teal-400 flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Configuração da IA (Google Gemini)
+                  </h4>
+                  <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-teal-400 hover:underline flex items-center gap-1 text-[11px]">
+                    Obter Chave Gratuita <i data-lucide="external-link" class="w-3 h-3"></i>
+                  </a>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="sm:col-span-2">
+                    <label class="block text-slate-400 font-medium mb-1">GEMINI_API_KEY</label>
+                    <input type="password" id="cfg-gemini-key" placeholder="AIzaSy..."
+                      class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500">
+                  </div>
+                  <div>
+                    <label class="block text-slate-400 font-medium mb-1">Modelo</label>
+                    <select id="cfg-gemini-model" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-teal-500">
+                      <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Recomendado)</option>
+                      <option value="gemini-1.5-flash">gemini-1.5-flash (Rápido)</option>
+                      <option value="gemini-1.5-pro">gemini-1.5-pro (Avançado)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Seção Instagram -->
+              <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                <h4 class="font-bold text-sm text-pink-400 flex items-center gap-1.5">
+                  <i data-lucide="instagram" class="w-4 h-4"></i> Credenciais do Instagram
+                </h4>
+                <p class="text-[11px] text-slate-400">Recomendamos usar uma conta secundária para pesquisas e mineração.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-slate-400 font-medium mb-1">Nome de Usuário (@handle)</label>
+                    <input type="text" id="cfg-insta-user" placeholder="seu_perfil (sem @ e sem e-mail)"
+                      class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500">
+                    <span class="text-[10px] text-slate-500 mt-1 block">Não use e-mail. Use o nome do perfil.</span>
+                  </div>
+                  <div>
+                    <label class="block text-slate-400 font-medium mb-1">Senha</label>
+                    <input type="password" id="cfg-insta-pass" placeholder="••••••••••••"
+                      class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500">
+                    <span class="text-[10px] text-slate-500 mt-1 block">Deixe em branco para manter a atual.</span>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80">
+                  <label class="block text-slate-400 font-medium mb-1">
+                    Cookie de Sessão Alternativo (INSTAGRAM_SESSIONID) <span class="text-slate-500 font-normal">- Opcional</span>
+                  </label>
+                  <input type="text" id="cfg-insta-sessionid" placeholder="Cole o cookie sessionid ou document.cookie aqui..."
+                    class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500">
+                  <span class="text-[10px] text-slate-500 mt-1 block">Útil caso o login direto por senha enfrente desafios de verificação.</span>
+                </div>
+              </div>
+
+              <!-- Botão Salvar -->
+              <div class="flex items-center justify-between pt-2">
+                <span class="text-[11px] text-slate-500">As alterações são gravadas no arquivo <code class="text-slate-400">.env</code> instantaneamente.</span>
+                <button type="submit" id="btn-save-settings" class="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-medium rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition">
+                  <i data-lucide="save" class="w-4 h-4"></i> Salvar Configurações
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -333,6 +421,9 @@
 
       if (tabId === 'reports') {
         loadReportsList();
+      }
+      if (tabId === 'settings') {
+        loadSettings();
       }
     }
 
@@ -937,10 +1028,76 @@
       }
     }
 
+    // Settings logic
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+
+        if (data.gemini_api_key) {
+          document.getElementById('cfg-gemini-key').value = data.gemini_api_key;
+        }
+        if (data.gemini_model) {
+          document.getElementById('cfg-gemini-model').value = data.gemini_model;
+        }
+        if (data.instagram_username) {
+          document.getElementById('cfg-insta-user').value = data.instagram_username;
+        }
+        if (data.instagram_sessionid) {
+          document.getElementById('cfg-insta-sessionid').value = data.instagram_sessionid;
+        }
+      } catch (err) {
+        console.error('Falha ao carregar configurações:', err);
+      }
+    }
+
+    async function saveSettings(e) {
+      e.preventDefault();
+      const gemini_api_key = document.getElementById('cfg-gemini-key').value.trim();
+      const gemini_model = document.getElementById('cfg-gemini-model').value;
+      const instagram_username = document.getElementById('cfg-insta-user').value.trim();
+      const instagram_password = document.getElementById('cfg-insta-pass').value;
+      const instagram_sessionid = document.getElementById('cfg-insta-sessionid').value.trim();
+
+      const btn = document.getElementById('btn-save-settings');
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          gemini_api_key,
+          gemini_model,
+          instagram_username,
+          instagram_sessionid,
+        };
+        if (instagram_password) {
+          payload.instagram_password = instagram_password;
+        }
+
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Erro ao salvar configurações.');
+        }
+
+        showToast(data.message || 'Configurações salvas no .env!');
+        checkStatus();
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       checkStatus();
+      loadSettings();
     });
   </script>
 </body>

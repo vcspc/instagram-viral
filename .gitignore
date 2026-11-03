@@ -39,6 +39,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.spec
 
 # ==========================================
 # Ambientes Virtuais (Virtual Environments)

@@ -37,6 +37,27 @@ class TestWebServer(AioHTTPTestCase):
         resp = await self.client.get("/api/reports/download/inexistente.md")
         self.assertEqual(resp.status, 404)
 
+    @unittest_run_loop
+    async def test_api_get_settings(self):
+        resp = await self.client.get("/api/settings")
+        self.assertEqual(resp.status, 200)
+        data = await resp.json()
+        self.assertIn("gemini_model", data)
+        self.assertIn("has_gemini_key", data)
+
+    @unittest_run_loop
+    async def test_api_save_settings(self):
+        from unittest.mock import patch
+        payload = {
+            "gemini_model": "gemini-2.5-flash",
+            "instagram_username": "teste_web_user",
+        }
+        with patch("src.web.server.AppServer._update_env_file"):
+            resp = await self.client.post("/api/settings", json=payload)
+            self.assertEqual(resp.status, 200)
+            data = await resp.json()
+            self.assertTrue(data.get("success"))
+
 
 if __name__ == "__main__":
     unittest.main()

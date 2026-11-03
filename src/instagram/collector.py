@@ -242,8 +242,8 @@ class InstagramCollector:
         self.rate_limiter.wait()
 
         try:
-            tags = self.client.search_tags(clean_keyword)
-            return [t.name for t in tags if getattr(t, "name", None)]
+            tags = self.client.search_hashtags(clean_keyword)
+            return [getattr(t, "name", "") for t in tags if getattr(t, "name", None)]
         except Exception as err:
             logger.warning(f"Erro ao pesquisar tags para '{clean_keyword}': {err}")
             return []

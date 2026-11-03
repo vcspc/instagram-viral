@@ -134,7 +134,18 @@ pip install -r requirements.txt
 
 ---
 
-## Configuração (.env)
+## Configuração de Variáveis de Ambiente (2 Formas)
+
+### Forma 1: Visualmente pelo Painel Web (Recomendada para usuários leigos)
+Você **não precisa mexer no terminal nem editar arquivos de texto** manualmente:
+1. Inicie a interface visual (`run.bat` no Windows ou `./run.sh` no Linux/Mac).
+2. Clique na aba **Configurações** no topo.
+3. Preencha a sua **GEMINI_API_KEY** (com link direto para gerar gratuitamente no Google AI Studio) e o seu usuário e senha do Instagram.
+4. Clique em **Salvar Configurações**. O sistema grava no arquivo `.env` e atualiza a sessão instantaneamente!
+
+---
+
+### Forma 2: Manualmente via Arquivo (.env)
 
 Crie uma cópia do arquivo `.env.example` com o nome `.env`:
 
@@ -165,6 +176,27 @@ REQUEST_DELAY_MIN=3.0
 REQUEST_DELAY_MAX=6.0
 MAX_SEARCH_ROUNDS=3
 ```
+
+---
+
+## Empacotamento em Executável Standalone (.exe para Windows)
+
+Para distribuir a aplicação para usuários finais sem que eles precisem de Python, Git ou terminal instalados:
+
+### Como Gerar o Executável:
+- **No Windows:** Dê um duplo clique em `build.bat` (ou execute `python build_exe.py`).
+- O script automatizado irá:
+  1. Instalar o `pyinstaller` (se necessário).
+  2. Empacotar o executável `InstagramViral.exe` com todos os arquivos de interface web (HTML/Tailwind).
+  3. **Embutir o binário do FFmpeg** dentro da pasta para que o usuário final não precise instalar o FFmpeg separadamente.
+  4. Gerar o atalho `Iniciar-Dashboard.bat`.
+
+### Como Distribuir para Usuários Finais:
+1. Acesse a pasta gerada `dist/InstagramViral`.
+2. Compacte essa pasta em um arquivo ZIP (`InstagramViral.zip`).
+3. Envie o ZIP para o usuário.
+4. **O usuário apenas descompacta e dá um DUPLO CLIQUE em `InstagramViral.exe`** (ou no atalho `Iniciar-Dashboard.bat`).
+5. O painel visual abre automaticamente no navegador e ele pode usar tudo visualmente sem tocar no terminal!
 
 ---
 

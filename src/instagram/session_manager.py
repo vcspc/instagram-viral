@@ -12,6 +12,7 @@ from instagrapi.exceptions import (
     LoginRequired,
     TwoFactorRequired,
 )
+import src.instagram.patches  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -55,20 +56,29 @@ class InstagramSessionManager:
         """Retorna uma instância de Client autenticada e validada."""
         self.session_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Tenta carregar e validar sessão existente em disco
+        # 1. Tenta carregar e validar sessão existente em disco (arquivo específico ou candidato na pasta)
+        candidate_sessions = []
         if self.session_file.exists():
-            logger.info(f"Carregando sessão existente de {self.session_file}...")
+            candidate_sessions.append(self.session_file)
+        elif self.session_dir.exists():
+            for f in self.session_dir.glob("*.session.json"):
+                if f.is_file() and f not in candidate_sessions:
+                    candidate_sessions.append(f)
+
+        for candidate in candidate_sessions:
+            logger.info(f"Testando sessão salva em {candidate}...")
             try:
-                self.client.load_settings(self.session_file)
+                self.client.load_settings(candidate)
                 self.client.get_timeline_feed()
-                logger.info("Sessão salva validada com sucesso!")
+                logger.info(f"Sessão {candidate.name} validada com sucesso!")
+                self.session_file = candidate
                 return self.client
             except (LoginRequired, ClientUnauthorizedError):
-                logger.warning("Sessão salva expirada no Instagram. Removendo arquivo local...")
-                self.session_file.unlink(missing_ok=True)
+                logger.warning(f"Sessão salva {candidate.name} expirada no Instagram. Removendo...")
+                candidate.unlink(missing_ok=True)
             except Exception as exc:
-                logger.warning(f"Erro ao verificar sessão salva ({exc}). Removendo cache...")
-                self.session_file.unlink(missing_ok=True)
+                logger.warning(f"Erro ao verificar sessão {candidate.name} ({exc}). Removendo...")
+                candidate.unlink(missing_ok=True)
 
         # 2. Se o usuário forneceu INSTAGRAM_SESSIONID, tenta autenticar por cookies
         if self.sessionid:

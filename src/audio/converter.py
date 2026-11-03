@@ -16,21 +16,29 @@ class AudioConverter:
         self.ffmpeg_bin = self._resolve_ffmpeg(ffmpeg_path)
 
     def _resolve_ffmpeg(self, custom_path: str | None) -> str:
-        """Localiza o binário do FFmpeg no sistema ou em caminhos conhecidos."""
+        """Localiza o binário do FFmpeg no sistema, no pacote executável ou em caminhos conhecidos."""
         if custom_path and Path(custom_path).exists():
             return custom_path
 
+        # 1. Verifica se o FFmpeg está embutido na pasta do executável compilado
+        exe_dir = Path(sys.executable).parent
+        for candidate in ["ffmpeg.exe", "ffmpeg.EXE", "ffmpeg"]:
+            embedded = exe_dir / candidate
+            if embedded.exists():
+                return str(embedded)
+
+        # 2. Verifica se o FFmpeg está no PATH do sistema
         found = shutil.which("ffmpeg")
         if found:
             return found
 
-        # Caminho conhecido no ambiente Windows do usuário
+        # 3. Caminho conhecido no ambiente Windows do usuário (npm)
         appdata_npm = Path(os.environ.get("APPDATA", "")) / "npm" / "ffmpeg.exe"
         if appdata_npm.exists():
             return str(appdata_npm)
 
         raise FileNotFoundError(
-            "O executável 'ffmpeg' não foi encontrado no PATH do sistema. "
+            "O executável 'ffmpeg' não foi encontrado no PATH do sistema nem na pasta do executável. "
             "Certifique-se de que o FFmpeg está instalado e disponível."
         )
 
