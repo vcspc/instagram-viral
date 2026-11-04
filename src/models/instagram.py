@@ -37,6 +37,25 @@ class ReelTranscript(BaseModel):
     )
 
 
+class VisualHookAnalysis(BaseModel):
+    visual_summary: str = Field(
+        default="", description="Síntese do gancho visual dos primeiros 3 segundos"
+    )
+    scene_elements: str = Field(
+        default="", description="Cenário, iluminação, enquadramento, pessoas e objetos em cena"
+    )
+    on_screen_text: str = Field(
+        default="", description="Textos, títulos, legendas sobrepostas ou stickers visíveis na tela"
+    )
+    pattern_interrupt: str = Field(
+        default="", description="Quebra de padrão visual observada nos 3 primeiros segundos"
+    )
+    timestamps_captured: list[float] = Field(
+        default_factory=lambda: [0.8, 1.8, 2.8],
+        description="Segundos do vídeo em que os frames foram extraídos",
+    )
+
+
 class ReelMetrics(BaseModel):
     views: int = Field(default=0, description="Contagem total de visualizações/plays")
     likes: int = Field(default=0, description="Contagem de curtidas")
@@ -65,5 +84,6 @@ class ReelItem(BaseModel):
     author_username: str = Field(default="", description="Nome de usuário do criador")
     video_url: str | None = Field(default=None, description="URL direta do stream de vídeo CDN")
     transcript: ReelTranscript | None = Field(default=None, description="Transcrição completa com timestamps")
+    visual_hook: VisualHookAnalysis | None = Field(default=None, description="Análise visual detalhada dos primeiros 3 segundos do vídeo")
     metrics: ReelMetrics = Field(default_factory=ReelMetrics)
     source_term: str = Field(default="", description="Hashtag ou termo de busca que originou a coleta")

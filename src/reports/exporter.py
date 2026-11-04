@@ -50,6 +50,78 @@ class ReportExporter:
 
         return {"markdown": md_path, "csv": csv_path, "json": json_path}
 
+    def export_transcriptions_markdown(
+        self,
+        reels: list[ReelItem],
+        language: str = "pt",
+        whisper_model: str = "base",
+    ) -> Path:
+        """Gera um arquivo Markdown dedicado com todas as transcrições literais dos Reels enviados."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_path = self.output_dir / f"transcricoes_{timestamp}.md"
+
+        transcribed = [r for r in reels if r.transcript]
+        total_duration = sum((r.transcript.duration for r in transcribed if r.transcript), 0.0)
+        total_mins = int(total_duration // 60)
+        total_secs = int(total_duration % 60)
+
+        lines = [
+            "# Transcrições Literais de Reels do Instagram",
+            f"\n> **Data de Geração:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+            f"> **Total de Vídeos Enviados:** {len(reels)} ({len(transcribed)} transcritos com sucesso)",
+            f"> **Tempo Total de Áudio:** {total_mins:02d}m {total_secs:02d}s",
+            f"> **Idioma do Whisper:** {language.upper()}",
+            f"> **Modelo Whisper Utilizado:** {whisper_model}\n",
+            "---",
+            "## Índice dos Vídeos Transcritos\n",
+        ]
+
+        for idx, r in enumerate(transcribed, 1):
+            dur = r.transcript.duration if r.transcript else r.duration
+            m = int(dur // 60)
+            s = int(dur % 60)
+            user_lbl = f" (@{r.author_username})" if r.author_username else ""
+            lines.append(f"{idx}. [{r.code}{user_lbl}](#{idx}-reel-{r.code.lower()}) — {m:02d}:{s:02d}")
+
+        lines.extend(["\n---", "## Transcrições Completas Detalhadas\n"])
+
+        for idx, r in enumerate(reels, 1):
+            t = r.transcript
+            date_str = r.taken_at.strftime("%d/%m/%Y") if r.taken_at else "-"
+            creator_str = f" • Criador: @{r.author_username}" if r.author_username else ""
+            dur_str = (
+                f"{int(t.duration // 60):02d}m {int(t.duration % 60):02d}s"
+                if t
+                else f"{int(r.duration // 60):02d}m {int(r.duration % 60):02d}s"
+            )
+
+            lines.extend([
+                f"### {idx}. Reel: [{r.code}]({r.url})",
+                f"- **Link Direto:** {r.url}",
+                f"- **Metadados:** Duração: {dur_str} • Data: {date_str}{creator_str}",
+            ])
+
+            if r.caption:
+                clean_cap = r.caption.replace("\n", " ").replace("\r", " ")[:200]
+                lines.append(f"- **Legenda Original:**\n  > {clean_cap}...\n")
+
+            if t:
+                lines.extend([
+                    "#### Transcrição Literal Completa:",
+                    f"> {t.text}\n",
+                    "#### Transcrição com Marcadores de Tempo (Timestamps):",
+                    "```text",
+                    *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
+                    "```\n",
+                ])
+            else:
+                lines.append("> *Aviso: Não foi possível extrair a faixa de áudio deste vídeo.*\n")
+
+            lines.append("---\n")
+
+        file_path.write_text("\n".join(lines), encoding="utf-8")
+        return file_path
+
     def export_markdown(
         self,
         base_name: str,
@@ -89,38 +161,68 @@ class ReportExporter:
                 f"{analysis.audio_insights}\n",
                 "### Estratégia de Legendas e CTA:",
                 f"{analysis.caption_strategy}\n",
+            ])
+
+            if getattr(analysis, "visual_hook_patterns", None):
+                lines.extend([
+                    "### Padrões Visuais nos Primeiros 3 Segundos (Visão Gemini):",
+                    *[f"- {vp}" for vp in analysis.visual_hook_patterns],
+                    "\n",
+                ])
+
+            if getattr(analysis, "visual_recommendations", None):
+                lines.extend([
+                    "### Recomendações Visuais de Gravação:",
+                    *[f"- {vr}" for vr in analysis.visual_recommendations],
+                    "\n",
+                ])
+
+            lines.extend([
                 "### Recomendações Práticas para Criadores do Nicho:",
                 *[f"1. {rec}" for rec in analysis.actionable_recommendations],
                 "\n---",
             ])
 
-        # Seção de Transcrições com Timestamps (se houver Reels transcritos)
-        transcribed_reels = [r for r in reels if r.transcript]
-        if transcribed_reels:
-            lines.append("## 3. Roteiros Transcritos com Timestamps dos Melhores Reels do Nicho\n")
-            for idx, r in enumerate(transcribed_reels, 1):
-                t = r.transcript
-                assert t is not None
+        # Seção de Roteiros e Ganchos dos Melhores Reels (Áudio + Visão)
+        media_examined = [r for r in reels if r.transcript or r.visual_hook]
+        if media_examined:
+            lines.append("## 3. Roteiros e Ganchos dos Melhores Reels (Áudio Whisper & Visão Gemini)\n")
+            for idx, r in enumerate(media_examined, 1):
                 date_str = r.taken_at.strftime("%d/%m/%Y") if r.taken_at else "-"
+                creator_str = f" - @{r.author_username}" if r.author_username else ""
                 lines.extend([
-                    f"### Reel #{idx}: [{r.code}]({r.url}) - @{r.author_username}",
-                    f"- **Data:** {date_str} | **Duração:** {t.duration:.1f}s | **Idioma:** {t.language.upper()}",
+                    f"### Reel #{idx}: [{r.code}]({r.url}){creator_str}",
+                    f"- **Data:** {date_str} | **Duração:** {r.duration:.1f}s",
                     f"- **Views:** {format_number(r.metrics.views)} | **Likes:** {format_number(r.metrics.likes)} | **Comentários:** {format_number(r.metrics.comments)}",
                     f"- **Viral Score:** **{r.metrics.viral_score:.1f}** | **Taxa de Engajamento:** {r.metrics.engagement_rate:.2f}%\n",
-                    f"> **Gancho Falado (0s a 3s):** *\"{t.hook_text_3s}\"*\n",
-                    "**Roteiro Falado Completo:**",
-                    "```text",
-                    *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
-                    "```\n",
                 ])
+
+                if r.visual_hook:
+                    v = r.visual_hook
+                    lines.extend([
+                        f"> **Gancho Visual (0s a 3s - Visão Gemini):** *\"{v.visual_summary}\"*",
+                        f"> - **Cenário & Elementos:** {v.scene_elements}",
+                        f"> - **Texto na Tela:** {v.on_screen_text}",
+                        f"> - **Quebra de Padrão (Pattern Interrupt):** {v.pattern_interrupt}\n",
+                    ])
+
+                if r.transcript:
+                    t = r.transcript
+                    lines.extend([
+                        f"> **Gancho Falado (0s a 3s - Whisper):** *\"{t.hook_text_3s}\"*\n",
+                        "**Roteiro Falado Completo:**",
+                        "```text",
+                        *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
+                        "```\n",
+                    ])
             lines.append("---\n")
             lines.append("## 4. Tabela dos Reels Mais Virais Encontrados\n")
         else:
             lines.append("## 3. Tabela dos Reels Mais Virais Encontrados\n")
 
         lines.extend([
-            "| # | Criador | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Transcrito? | Link Direto | Origem |",
-            "|---|---|---|---|---|---|---|---|---|---|---|",
+            "| # | Criador | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Áudio? | Visão? | Link Direto | Origem |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
         ])
 
         for idx, reel in enumerate(reels, 1):
@@ -133,8 +235,9 @@ class ReportExporter:
             author_md = f"[@{reel.author_username}](https://www.instagram.com/{reel.author_username}/)"
             date_str = reel.taken_at.strftime("%d/%m/%Y") if reel.taken_at else "-"
             has_t = "Sim" if reel.transcript else "Não"
+            has_v = "Sim" if reel.visual_hook else "Não"
             lines.append(
-                f"| {idx} | {author_md} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {has_t} | {link_md} | {reel.source_term} |"
+                f"| {idx} | {author_md} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {has_t} | {has_v} | {link_md} | {reel.source_term} |"
             )
 
         file_path.write_text("\n".join(lines), encoding="utf-8")
@@ -148,7 +251,7 @@ class ReportExporter:
         analysis: ProfileAnalysis | None,
         timeframe_desc: str = "Todo o período",
     ) -> Path:
-        """Gera relatório de auditoria de perfil em Markdown com transcrições e timestamps."""
+        """Gera relatório de auditoria de perfil em Markdown com transcrições, visão e timestamps."""
         file_path = self.output_dir / f"{base_name}.md"
 
         lines = [
@@ -187,37 +290,66 @@ class ReportExporter:
                 f"**Fórmula da Estrutura do Roteiro:**\n*{spoken.script_structure_formula}*\n",
                 "### Chamadas para Ação Faladas (CTAs):",
                 *[f"- {c}" for c in spoken.verbal_cta_patterns],
-                "\n### Táticas para Modelar com Originalidade:",
+                "\n",
+            ])
+
+            if getattr(analysis, "visual_style_and_presence", None):
+                lines.extend([
+                    "### Presença e Estilo Visual nos Primeiros 3 Segundos (Visão Gemini):",
+                    f"{analysis.visual_style_and_presence}\n",
+                ])
+
+            if getattr(analysis, "visual_hook_breakdown", None):
+                lines.extend([
+                    "### Decodificação dos Ganchos Visuais do Perfil:",
+                    *[f"- {vh}" for vh in analysis.visual_hook_breakdown],
+                    "\n",
+                ])
+
+            lines.extend([
+                "### Táticas para Modelar com Originalidade:",
                 *[f"1. {t}" for t in analysis.top_tactics_to_model],
                 f"\n### Template de Roteiro Recomendado:\n```text\n{analysis.recommended_script_template}\n```\n",
                 "---\n",
             ])
 
-        # Seção de Transcrições com Timestamps
-        transcribed_reels = [r for r in reels if r.transcript]
-        if transcribed_reels:
-            lines.append("## 3. Roteiros Transcritos com Timestamps dos Top Reels\n")
-            for idx, r in enumerate(transcribed_reels, 1):
-                t = r.transcript
-                assert t is not None
+        # Seção de Roteiros e Visão dos Top Reels do Perfil
+        media_examined = [r for r in reels if r.transcript or r.visual_hook]
+        if media_examined:
+            lines.append("## 3. Roteiros e Ganchos dos Melhores Reels (Áudio Whisper & Visão Gemini)\n")
+            for idx, r in enumerate(media_examined, 1):
                 date_str = r.taken_at.strftime("%d/%m/%Y") if r.taken_at else "-"
                 lines.extend([
                     f"### Reel #{idx}: [{r.code}]({r.url})",
-                    f"- **Data:** {date_str} | **Duração:** {t.duration:.1f}s | **Idioma:** {t.language.upper()}",
+                    f"- **Data:** {date_str} | **Duração:** {r.duration:.1f}s",
                     f"- **Views:** {format_number(r.metrics.views)} | **Likes:** {format_number(r.metrics.likes)} | **Comentários:** {format_number(r.metrics.comments)}",
                     f"- **Viral Score:** **{r.metrics.viral_score:.1f}** | **Taxa de Engajamento:** {r.metrics.engagement_rate:.2f}%\n",
-                    f"> **Gancho Falado (0s a 3s):** *\"{t.hook_text_3s}\"*\n",
-                    "**Roteiro Falado Completo:**",
-                    "```text",
-                    *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
-                    "```\n",
                 ])
+
+                if r.visual_hook:
+                    v = r.visual_hook
+                    lines.extend([
+                        f"> **Gancho Visual (0s a 3s - Visão Gemini):** *\"{v.visual_summary}\"*",
+                        f"> - **Cenário & Elementos:** {v.scene_elements}",
+                        f"> - **Texto na Tela:** {v.on_screen_text}",
+                        f"> - **Quebra de Padrão (Pattern Interrupt):** {v.pattern_interrupt}\n",
+                    ])
+
+                if r.transcript:
+                    t = r.transcript
+                    lines.extend([
+                        f"> **Gancho Falado (0s a 3s - Whisper):** *\"{t.hook_text_3s}\"*\n",
+                        "**Roteiro Falado Completo:**",
+                        "```text",
+                        *[f"{seg.timestamp_formatted} {seg.text}" for seg in t.segments],
+                        "```\n",
+                    ])
             lines.append("---\n")
 
         lines.extend([
             "## 4. Tabela de Desempenho dos Reels Analisados\n",
-            "| # | Código | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Transcrito? | Link Direto |",
-            "|---|---|---|---|---|---|---|---|---|---|",
+            "| # | Código | Publicado | Views | Likes | Comentários | Engajamento | Viral Score | Áudio? | Visão? | Link Direto |",
+            "|---|---|---|---|---|---|---|---|---|---|---|",
         ])
 
         for idx, reel in enumerate(reels, 1):
@@ -228,9 +360,10 @@ class ReportExporter:
             score_fmt = f"{reel.metrics.viral_score:.1f}"
             date_str = reel.taken_at.strftime("%d/%m/%Y") if reel.taken_at else "-"
             has_t = "Sim" if reel.transcript else "Não"
+            has_v = "Sim" if reel.visual_hook else "Não"
             link_md = f"[{reel.code}]({reel.url})"
             lines.append(
-                f"| {idx} | {reel.code} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {has_t} | {link_md} |"
+                f"| {idx} | {reel.code} | {date_str} | {views_fmt} | {likes_fmt} | {comments_fmt} | {er_fmt} | **{score_fmt}** | {has_t} | {has_v} | {link_md} |"
             )
 
         file_path.write_text("\n".join(lines), encoding="utf-8")
@@ -255,6 +388,11 @@ class ReportExporter:
             "has_transcription",
             "hook_text_3s",
             "full_transcription",
+            "has_visual_analysis",
+            "visual_hook_summary",
+            "visual_pattern_interrupt",
+            "visual_scene_elements",
+            "visual_on_screen_text",
             "source_term",
             "caption_preview",
         ]
@@ -267,6 +405,11 @@ class ReportExporter:
                 has_t = bool(reel.transcript)
                 hook_3s = reel.transcript.hook_text_3s if reel.transcript else ""
                 full_t = reel.transcript.text if reel.transcript else ""
+                has_v = bool(reel.visual_hook)
+                vis_summary = reel.visual_hook.visual_summary if reel.visual_hook else ""
+                vis_pi = reel.visual_hook.pattern_interrupt if reel.visual_hook else ""
+                vis_scene = reel.visual_hook.scene_elements if reel.visual_hook else ""
+                vis_text = reel.visual_hook.on_screen_text if reel.visual_hook else ""
                 writer.writerow({
                     "rank": idx,
                     "code": reel.code,
@@ -282,6 +425,11 @@ class ReportExporter:
                     "has_transcription": has_t,
                     "hook_text_3s": hook_3s,
                     "full_transcription": full_t,
+                    "has_visual_analysis": has_v,
+                    "visual_hook_summary": vis_summary,
+                    "visual_pattern_interrupt": vis_pi,
+                    "visual_scene_elements": vis_scene,
+                    "visual_on_screen_text": vis_text,
                     "source_term": reel.source_term,
                     "caption_preview": clean_caption,
                 })
@@ -289,7 +437,7 @@ class ReportExporter:
         return file_path
 
     def export_profile_csv(self, base_name: str, reels: list[ReelItem]) -> Path:
-        """Gera planilha CSV com dados dos Reels do perfil incluindo transcrições."""
+        """Gera planilha CSV com dados dos Reels do perfil incluindo transcrições e ganchos visuais."""
         file_path = self.output_dir / f"{base_name}.csv"
 
         fieldnames = [
@@ -306,6 +454,11 @@ class ReportExporter:
             "has_transcription",
             "hook_text_3s",
             "full_transcription",
+            "has_visual_analysis",
+            "visual_hook_summary",
+            "visual_pattern_interrupt",
+            "visual_scene_elements",
+            "visual_on_screen_text",
             "caption_preview",
         ]
 
@@ -317,6 +470,11 @@ class ReportExporter:
                 has_t = bool(reel.transcript)
                 hook_3s = reel.transcript.hook_text_3s if reel.transcript else ""
                 full_t = reel.transcript.text if reel.transcript else ""
+                has_v = bool(reel.visual_hook)
+                vis_summary = reel.visual_hook.visual_summary if reel.visual_hook else ""
+                vis_pi = reel.visual_hook.pattern_interrupt if reel.visual_hook else ""
+                vis_scene = reel.visual_hook.scene_elements if reel.visual_hook else ""
+                vis_text = reel.visual_hook.on_screen_text if reel.visual_hook else ""
                 writer.writerow({
                     "rank": idx,
                     "code": reel.code,
@@ -331,6 +489,11 @@ class ReportExporter:
                     "has_transcription": has_t,
                     "hook_text_3s": hook_3s,
                     "full_transcription": full_t,
+                    "has_visual_analysis": has_v,
+                    "visual_hook_summary": vis_summary,
+                    "visual_pattern_interrupt": vis_pi,
+                    "visual_scene_elements": vis_scene,
+                    "visual_on_screen_text": vis_text,
                     "caption_preview": clean_caption,
                 })
 

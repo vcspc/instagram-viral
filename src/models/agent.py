@@ -50,6 +50,14 @@ class ViralAnalysis(BaseModel):
     caption_strategy: str = Field(
         description="Padrão das legendas, uso de palavras-chave e chamadas para ação (CTAs)"
     )
+    visual_hook_patterns: list[str] = Field(
+        default_factory=list,
+        description="Padrões visuais observados nos primeiros 3s dos reels (cenários, textos na tela, enquadramentos e quebras de padrão)",
+    )
+    visual_recommendations: list[str] = Field(
+        default_factory=list,
+        description="Recomendações práticas visuais para a gravação dos primeiros 3 segundos de vídeos no nicho",
+    )
     actionable_recommendations: list[str] = Field(
         description="Recomendações práticas e acionáveis para o usuário replicar o sucesso"
     )
@@ -97,6 +105,14 @@ class ProfileAnalysis(BaseModel):
     )
     spoken_scripts: SpokenScriptAnalysis = Field(
         description="Decodificação detalhada dos roteiros falados com base nas transcrições"
+    )
+    visual_style_and_presence: str = Field(
+        default="",
+        description="Diagnóstico da presença visual, enquadramento e cenários nos primeiros 3s dos reels do perfil",
+    )
+    visual_hook_breakdown: list[str] = Field(
+        default_factory=list,
+        description="Análise detalhada dos ganchos visuais e quebras de padrão nos vídeos do criador",
     )
     top_tactics_to_model: list[str] = Field(
         description="Táticas práticas para replicar o sucesso desse perfil com originalidade"

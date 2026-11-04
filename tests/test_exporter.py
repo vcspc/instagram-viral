@@ -48,7 +48,7 @@ class TestExporter(unittest.TestCase):
                 actionable_recommendations=["Filme a textura cortando o bolo nos primeiros 2s"],
             )
 
-            from src.models.instagram import ReelTranscript, TranscriptSegment
+            from src.models.instagram import ReelTranscript, TranscriptSegment, VisualHookAnalysis
 
             reels[0].transcript = ReelTranscript(
                 text="Aprenda a fazer o bolo perfeito em 3 passos.",
@@ -57,6 +57,13 @@ class TestExporter(unittest.TestCase):
                 ],
                 duration=35.0,
                 hook_text_3s="Aprenda a fazer o bolo perfeito",
+            )
+            reels[0].visual_hook = VisualHookAnalysis(
+                visual_summary="Criador mostra a calda escorrendo no bolo",
+                scene_elements="Prato de vidro, bancada iluminada",
+                on_screen_text="BOLO SEM FORNO!",
+                pattern_interrupt="Zoom dramático na textura",
+                timestamps_captured=[0.8, 1.8, 2.8],
             )
 
             paths = exporter.export_all(
@@ -75,10 +82,12 @@ class TestExporter(unittest.TestCase):
             self.assertIn("CxYz123", md_content)
             self.assertIn("Não faça bolo antes de ver isso", md_content)
             self.assertIn("Aprenda a fazer o bolo perfeito", md_content)
+            self.assertIn("Criador mostra a calda escorrendo no bolo", md_content)
 
             csv_content = paths["csv"].read_text(encoding="utf-8")
             self.assertIn("has_transcription", csv_content)
-            self.assertIn("Aprenda a fazer o bolo perfeito", csv_content)
+            self.assertIn("has_visual_analysis", csv_content)
+            self.assertIn("Criador mostra a calda escorrendo no bolo", csv_content)
 
 
 if __name__ == "__main__":

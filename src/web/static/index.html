@@ -73,6 +73,9 @@
       <button onclick="switchTab('profile')" id="tab-btn-profile" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
         <i data-lucide="user" class="w-4 h-4"></i> Auditoria de Perfil
       </button>
+      <button onclick="switchTab('transcribe')" id="tab-btn-transcribe" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
+        <i data-lucide="file-audio" class="w-4 h-4"></i> Transcrição de Reels
+      </button>
       <button onclick="switchTab('reports')" id="tab-btn-reports" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition">
         <i data-lucide="folder" class="w-4 h-4"></i> Relatórios & Downloads
       </button>
@@ -226,6 +229,70 @@
 
       <!-- Profile Results Container -->
       <div id="profile-results" class="hidden space-y-6"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB: TRANSCRIÇÃO DIRETA DE REELS (NOVO)   -->
+    <!-- ========================================== -->
+    <section id="tab-transcribe" class="hidden space-y-6">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur">
+        <h2 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+          <i data-lucide="file-audio" class="w-5 h-5 text-teal-400"></i> Transcrição Literal de Reels por Links
+        </h2>
+        <p class="text-sm text-slate-400 mb-6">Cole quantos links de Reels do Instagram quiser. A ferramenta baixará os áudios e gerará a transcrição literal completa e com timestamps em um documento Markdown.</p>
+
+        <form id="form-transcribe" onsubmit="executeTranscribe(e => e.preventDefault() || executeTranscribeForm(e))" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>URLs dos Vídeos de Reels:</span>
+              <span class="text-slate-500 font-normal">Uma por linha ou separadas por vírgula</span>
+            </label>
+            <textarea id="transcribe-urls" rows="5" required
+              placeholder="https://www.instagram.com/reel/DdrW4GDAnjS/&#10;https://www.instagram.com/reel/C8xY12zAbc/&#10;https://instagram.com/p/..."
+              class="w-full p-4 bg-slate-950 border border-slate-700/80 rounded-xl text-white font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-xs leading-relaxed transition"></textarea>
+          </div>
+
+          <!-- Opções de Idioma e Modelo -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+            <div class="flex items-center gap-4 text-xs w-full sm:w-auto">
+              <div>
+                <label class="block text-slate-400 font-medium mb-1">Idioma da Fala</label>
+                <select id="transcribe-language" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-teal-500 text-xs">
+                  <option value="pt" selected>Português (pt)</option>
+                  <option value="en">Inglês (en)</option>
+                  <option value="es">Espanhol (es)</option>
+                  <option value="auto">Automático (auto)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-400 font-medium mb-1">Modelo Whisper</label>
+                <select id="transcribe-whisper-model" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-teal-500 text-xs">
+                  <option value="base" selected>base (Recomendado)</option>
+                  <option value="tiny">tiny (Ultra Rápido)</option>
+                  <option value="small">small (Alta Precisão)</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="button" onclick="executeTranscribeForm()" id="btn-transcribe-submit"
+              class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 transition shrink-0">
+              <i data-lucide="play" class="w-4 h-4 fill-white"></i> Transcrever Vídeos
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Transcribe Loading State -->
+      <div id="transcribe-loading" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+        <div class="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin mx-auto"></div>
+        <div>
+          <h3 class="text-base font-semibold text-white">Transcrevendo Áudios com Whisper...</h3>
+          <p class="text-xs text-slate-400 mt-1" id="transcribe-loading-step">Baixando vídeos, convertendo para WAV 16kHz e gerando transcrições literais...</p>
+        </div>
+      </div>
+
+      <!-- Transcribe Results Container -->
+      <div id="transcribe-results" class="hidden space-y-6"></div>
     </section>
 
     <!-- ========================================== -->
@@ -414,10 +481,12 @@
         activeBtn.classList.add('border-teal-500', 'text-teal-400');
       }
 
-      ['search', 'profile', 'reports', 'settings'].forEach(id => {
-        document.getElementById(`tab-${id}`).classList.add('hidden');
+      ['search', 'profile', 'transcribe', 'reports', 'settings'].forEach(id => {
+        const el = document.getElementById(`tab-${id}`);
+        if (el) el.classList.add('hidden');
       });
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeTabEl = document.getElementById(`tab-${tabId}`);
+      if (activeTabEl) activeTabEl.classList.remove('hidden');
 
       if (tabId === 'reports') {
         loadReportsList();
@@ -603,31 +672,50 @@
         `;
       }
 
-      // Transcripts Panel
-      const transcribed = reels.filter(r => r.transcript);
-      if (transcribed.length > 0) {
+      // Transcripts & Visual Hooks Panel
+      const examined = reels.filter(r => r.transcript || r.visual_hook);
+      if (examined.length > 0) {
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="mic" class="w-5 h-5 text-emerald-400"></i> Roteiros Transcritos com Timestamps (Whisper)
+              <i data-lucide="eye" class="w-5 h-5 text-pink-400"></i> Ganchos Visuais (3s) & Roteiros Falados Transcritos
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              ${transcribed.map((r, i) => `
+              ${examined.map((r, i) => `
                 <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
                   <div>
                     <div class="flex items-center justify-between text-xs mb-2">
                       <span class="font-bold text-teal-400">Reel #${i+1} (${r.code})</span>
                       <span class="text-slate-400">${r.duration ? r.duration.toFixed(1) + 's' : ''}</span>
                     </div>
-                    <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
-                      <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1">Gancho Inicial (0-3s):</span>
-                      "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
-                    </div>
-                    <div class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
-                      ${r.transcript.segments.map(seg => `
-                        <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
-                      `).join('')}
-                    </div>
+
+                    ${r.visual_hook ? `
+                      <div class="p-2.5 bg-pink-500/10 border border-pink-500/20 rounded-lg text-xs text-pink-300 mb-2.5">
+                        <span class="font-bold block text-pink-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <i data-lucide="camera" class="w-3 h-3"></i> Gancho Visual (0s a 3s - Visão Gemini):
+                        </span>
+                        <p class="font-medium text-slate-200 mb-1.5">"${r.visual_hook.visual_summary}"</p>
+                        <div class="space-y-0.5 text-[11px] text-slate-300">
+                          <div><span class="text-slate-500">Cenário:</span> ${r.visual_hook.scene_elements}</div>
+                          <div><span class="text-slate-500">Texto na tela:</span> ${r.visual_hook.on_screen_text}</div>
+                          <div><span class="text-slate-500">Quebra de padrão:</span> ${r.visual_hook.pattern_interrupt}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    ${r.transcript ? `
+                      <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
+                        <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <i data-lucide="mic" class="w-3 h-3"></i> Gancho Falado (0s a 3s - Whisper):
+                        </span>
+                        "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
+                      </div>
+                      <div class="max-h-40 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
+                        ${r.transcript.segments.map(seg => `
+                          <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
                   </div>
                   <a href="${r.url}" target="_blank" class="w-full mt-3 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-center rounded-lg text-xs font-medium text-slate-200 flex items-center justify-center gap-1.5 transition">
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Instagram
@@ -851,31 +939,50 @@
         </div>
       `;
 
-      // Transcripts Panel
-      const transcribed = reels.filter(r => r.transcript);
-      if (transcribed.length > 0) {
+      // Transcripts & Visual Hooks Panel
+      const examined = reels.filter(r => r.transcript || r.visual_hook);
+      if (examined.length > 0) {
         html += `
           <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="mic" class="w-5 h-5 text-emerald-400"></i> Roteiros Transcritos com Timestamps dos Top Reels
+              <i data-lucide="eye" class="w-5 h-5 text-pink-400"></i> Ganchos Visuais (3s) & Roteiros Transcritos dos Top Reels
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              ${transcribed.map((r, i) => `
+              ${examined.map((r, i) => `
                 <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 flex flex-col justify-between">
                   <div>
                     <div class="flex items-center justify-between text-xs mb-2">
                       <span class="font-bold text-teal-400">Reel #${i+1} (${r.code})</span>
                       <span class="text-slate-400">${r.duration ? r.duration.toFixed(1) + 's' : ''}</span>
                     </div>
-                    <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
-                      <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1">Gancho Inicial (0-3s):</span>
-                      "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
-                    </div>
-                    <div class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
-                      ${r.transcript.segments.map(seg => `
-                        <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
-                      `).join('')}
-                    </div>
+
+                    ${r.visual_hook ? `
+                      <div class="p-2.5 bg-pink-500/10 border border-pink-500/20 rounded-lg text-xs text-pink-300 mb-2.5">
+                        <span class="font-bold block text-pink-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <i data-lucide="camera" class="w-3 h-3"></i> Gancho Visual (0s a 3s - Visão Gemini):
+                        </span>
+                        <p class="font-medium text-slate-200 mb-1.5">"${r.visual_hook.visual_summary}"</p>
+                        <div class="space-y-0.5 text-[11px] text-slate-300">
+                          <div><span class="text-slate-500">Cenário:</span> ${r.visual_hook.scene_elements}</div>
+                          <div><span class="text-slate-500">Texto na tela:</span> ${r.visual_hook.on_screen_text}</div>
+                          <div><span class="text-slate-500">Quebra de padrão:</span> ${r.visual_hook.pattern_interrupt}</div>
+                        </div>
+                      </div>
+                    ` : ''}
+
+                    ${r.transcript ? `
+                      <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300 mb-3">
+                        <span class="font-bold block text-emerald-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                          <i data-lucide="mic" class="w-3 h-3"></i> Gancho Falado (0s a 3s - Whisper):
+                        </span>
+                        "${r.transcript.hook_text_3s || r.transcript.text.slice(0, 80)}"
+                      </div>
+                      <div class="max-h-40 overflow-y-auto space-y-1.5 text-xs text-slate-300 font-mono">
+                        ${r.transcript.segments.map(seg => `
+                          <div><span class="text-slate-500 select-none">${seg.timestamp_formatted}</span> ${seg.text}</div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
                   </div>
                   <a href="${r.url}" target="_blank" class="w-full mt-3 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-center rounded-lg text-xs font-medium text-slate-200 flex items-center justify-center gap-1.5 transition">
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Instagram
@@ -985,6 +1092,173 @@
           </div>
         `;
       }
+
+      resultsEl.innerHTML = html;
+      resultsEl.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // Execute Transcribe Form
+    async function executeTranscribeForm() {
+      const urlsText = document.getElementById('transcribe-urls').value.trim();
+      if (!urlsText) {
+        showToast('Por favor, cole ao menos um link de Reel.', 'error');
+        return;
+      }
+
+      const rawUrls = urlsText.replace(/,/g, '\n').split('\n').map(u => u.trim()).filter(Boolean);
+      if (rawUrls.length === 0) {
+        showToast('Nenhum link válido informado.', 'error');
+        return;
+      }
+
+      const language = document.getElementById('transcribe-language').value;
+      const whisper_model = document.getElementById('transcribe-whisper-model').value;
+
+      const loadingEl = document.getElementById('transcribe-loading');
+      const resultsEl = document.getElementById('transcribe-results');
+      const submitBtn = document.getElementById('btn-transcribe-submit');
+
+      loadingEl.classList.remove('hidden');
+      resultsEl.classList.add('hidden');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            urls: rawUrls,
+            language,
+            whisper_model,
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Erro na transcrição de Reels.');
+        }
+
+        renderTranscribeResults(data);
+        showToast(`Transcrição concluída (${data.total_transcribed} de ${data.total_urls} vídeos)!`);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        loadingEl.classList.add('hidden');
+        submitBtn.disabled = false;
+      }
+    }
+
+    function copyToClipboard(text, btnElement) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalHtml = btnElement.innerHTML;
+        btnElement.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Copiado!';
+        lucide.createIcons();
+        setTimeout(() => {
+          btnElement.innerHTML = originalHtml;
+          lucide.createIcons();
+        }, 2000);
+      }).catch(err => {
+        showToast('Não foi possível copiar automaticamente.', 'error');
+      });
+    }
+
+    function renderTranscribeResults(data) {
+      const resultsEl = document.getElementById('transcribe-results');
+      const reels = data.reels || [];
+
+      let html = '';
+
+      // Export Bar
+      if (data.markdown_file) {
+        html += `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div class="flex items-center gap-2 text-sm text-slate-300">
+              <i data-lucide="file-check" class="w-5 h-5 text-teal-400"></i>
+              <span><strong>Documento Markdown Gerado:</strong> <code class="font-mono text-teal-300">${data.markdown_file}</code></span>
+            </div>
+            <a href="${data.download_url}" download class="px-4 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-teal-500/20 transition">
+              <i data-lucide="download" class="w-4 h-4"></i> Baixar Arquivo Markdown Completo
+            </a>
+          </div>
+        `;
+      }
+
+      // Transcriptions List
+      html += `
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="quote" class="w-5 h-5 text-teal-400"></i> Transcrições Literais dos Vídeos (${reels.length})
+            </h3>
+            <span class="text-xs text-slate-400 font-mono">${data.total_transcribed} transcritos com sucesso</span>
+          </div>
+
+          <div class="space-y-6">
+            ${reels.map((r, i) => {
+              const t = r.transcript;
+              const dateStr = r.taken_at ? new Date(r.taken_at).toLocaleDateString('pt-BR') : '-';
+              const durStr = t ? Math.floor(t.duration / 60) + 'm ' + Math.floor(t.duration % 60) + 's' : (r.duration ? r.duration.toFixed(1) + 's' : '-');
+              return `
+                <div class="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded bg-teal-500/10 text-teal-400 font-bold text-xs">#${i+1}</span>
+                        <h4 class="font-bold text-sm text-white">Reel ${r.code}</h4>
+                        ${r.author_username ? `<span class="text-xs text-slate-400">(@${r.author_username})</span>` : ''}
+                      </div>
+                      <div class="flex items-center gap-4 text-xs text-slate-400 mt-1 font-mono">
+                        <span>Duração: ${durStr}</span>
+                        <span>Data: ${dateStr}</span>
+                        ${t ? `<span>Idioma: ${t.language.toUpperCase()}</span>` : ''}
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <a href="${r.url}" target="_blank" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir no Instagram
+                      </a>
+                    </div>
+                  </div>
+
+                  ${t ? `
+                    <div class="space-y-3">
+                      <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="align-left" class="w-3.5 h-3.5"></i> Transcrição Literal Completa:
+                          </span>
+                          <button onclick="copyToClipboard(\`${t.text.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`, this)" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-sans flex items-center gap-1 transition">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copiar Texto
+                          </button>
+                        </div>
+                        <div class="p-3.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans select-text">
+                          ${t.text}
+                        </div>
+                      </div>
+
+                      <details class="group pt-1">
+                        <summary class="text-xs text-slate-400 cursor-pointer font-medium hover:text-slate-200 select-none flex items-center gap-1.5">
+                          <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-500"></i> Ver transcrição com marcadores de tempo (Timestamps)
+                        </summary>
+                        <div class="mt-2 max-h-56 overflow-y-auto p-3 rounded-lg bg-slate-900/60 border border-slate-800/80 space-y-1.5 text-xs text-slate-300 font-mono">
+                          ${t.segments.map(s => `
+                            <div><span class="text-slate-500 select-none">${s.timestamp_formatted}</span> ${s.text}</div>
+                          `).join('')}
+                        </div>
+                      </details>
+                    </div>
+                  ` : `
+                    <div class="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+                      Não foi possível extrair a transcrição deste vídeo. Verifique se o vídeo possui fala audível ou se a conta é pública.
+                    </div>
+                  `}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
 
       resultsEl.innerHTML = html;
       resultsEl.classList.remove('hidden');

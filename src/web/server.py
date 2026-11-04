@@ -44,6 +44,7 @@ class AppServer:
         # APIs de Operação (Pesquisa de Nicho e Auditoria de Perfil)
         self.app.router.add_post("/api/search", self.handle_search)
         self.app.router.add_post("/api/profile", self.handle_profile)
+        self.app.router.add_post("/api/transcribe", self.handle_transcribe)
 
         # APIs de Relatórios e Download
         self.app.router.add_get("/api/reports", self.handle_list_reports)
@@ -283,10 +284,13 @@ class AppServer:
 
         ranked_reels = sort_reels_by_viral_score(all_reels)
 
-        # 4. Transcrição com Whisper dos Top N
+        # 4. Transcrição com Whisper e Visão Computacional dos Top N
         if top_transcribe > 0 and ranked_reels:
             audio_mgr = AudioTranscriptionManager(
-                client=client, whisper_model=whisper_model, language=language
+                client=client,
+                whisper_model=whisper_model,
+                language=language,
+                gemini_client=gemini_client,
             )
             ranked_reels = audio_mgr.process_top_reels(ranked_reels, top_n=top_transcribe)
 
@@ -384,17 +388,20 @@ class AppServer:
         reels = collector.get_user_reels(user_id=profile.pk, amount=limit, min_taken_at=min_taken_at)
         ranked_reels = sort_reels_by_viral_score(reels)
 
-        # 3. Download e Transcrição com Whisper
+        # 3. Download, Transcrição com Whisper e Visão Computacional
+        gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model) if settings.gemini_api_key else None
         if top_transcribe > 0 and ranked_reels:
             audio_mgr = AudioTranscriptionManager(
-                client=client, whisper_model=whisper_model, language=language
+                client=client,
+                whisper_model=whisper_model,
+                language=language,
+                gemini_client=gemini_client,
             )
             ranked_reels = audio_mgr.process_top_reels(ranked_reels, top_n=top_transcribe)
 
         # 4. Análise com Gemini
         analysis = None
-        if not no_analysis and ranked_reels:
-            gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
+        if not no_analysis and ranked_reels and gemini_client:
             analyzer = ProfileAnalyzer(gemini_client=gemini_client)
             analysis = analyzer.analyze_profile(profile=profile, reels=ranked_reels)
 
@@ -414,6 +421,83 @@ class AppServer:
             "total_reels": len(ranked_reels),
             "reels": [r.model_dump(mode="json") for r in ranked_reels],
             "reports": {k: p.name for k, p in paths.items()},
+        }
+
+    async def handle_transcribe(self, request: web.Request) -> web.Response:
+        """Executa a transcrição literal de uma lista de URLs de Reels."""
+        try:
+            body = await request.json()
+        except Exception:
+            return web.json_response({"error": "Corpo da requisição JSON inválido."}, status=400)
+
+        urls = body.get("urls", [])
+        if isinstance(urls, str):
+            urls = [u.strip() for u in urls.replace(",", "\n").splitlines() if u.strip()]
+
+        if not urls:
+            return web.json_response({"error": "Nenhuma URL de Reel informada."}, status=400)
+
+        whisper_model = str(body.get("whisper_model", "base"))
+        language = str(body.get("language", "pt"))
+
+        loop = asyncio.get_running_loop()
+        try:
+            result = await loop.run_in_executor(
+                None,
+                self._execute_transcribe_sync,
+                urls,
+                whisper_model,
+                language,
+            )
+            return web.json_response(result)
+        except Exception as exc:
+            logger.exception("Erro durante a transcrição de Reels:")
+            return web.json_response({"error": str(exc)}, status=500)
+
+    def _execute_transcribe_sync(
+        self,
+        urls: list[str],
+        whisper_model: str,
+        language: str,
+    ) -> dict:
+        """Lógica síncrona de download e transcrição literal de Reels enviados por link."""
+        client = None
+        try:
+            session_mgr = InstagramSessionManager(
+                username=settings.instagram_username,
+                password=settings.instagram_password,
+                session_dir=settings.instagram_session_dir,
+                sessionid=settings.instagram_sessionid,
+                two_factor_seed=settings.instagram_2fa_seed,
+                proxy=settings.instagram_proxy,
+            )
+            client = session_mgr.get_authenticated_client()
+        except Exception as exc:
+            logger.warning(f"Aviso de autenticação ao transcrever ({exc}). Prosseguindo...")
+
+        collector = InstagramCollector(client=client) if client else None
+        audio_mgr = AudioTranscriptionManager(
+            client=client,
+            whisper_model=whisper_model,
+            language=language,
+            enable_vision=False,
+        )
+        exporter = ReportExporter(output_dir=settings.outputs_dir)
+
+        reels = audio_mgr.transcribe_reels_from_urls(urls, collector=collector)
+        md_path = exporter.export_transcriptions_markdown(
+            reels=reels,
+            language=language,
+            whisper_model=whisper_model,
+        )
+
+        return {
+            "success": True,
+            "total_urls": len(urls),
+            "total_transcribed": len([r for r in reels if r.transcript]),
+            "markdown_file": md_path.name,
+            "download_url": f"/api/reports/download/{md_path.name}",
+            "reels": [r.model_dump(mode="json") for r in reels],
         }
 
     async def handle_list_reports(self, request: web.Request) -> web.Response:

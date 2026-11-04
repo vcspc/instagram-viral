@@ -118,29 +118,43 @@ def render_reels_table(reels: list[ReelItem], limit: int = 15) -> None:
 
 
 def render_transcripts_panel(reels: list[ReelItem]) -> None:
-    """Renderiza os roteiros falados transcritos com marcadores de timestamp."""
-    transcribed = [r for r in reels if r.transcript]
-    if not transcribed:
+    """Renderiza os roteiros falados transcritos com timestamps e a análise do gancho visual."""
+    examined = [r for r in reels if r.transcript or r.visual_hook]
+    if not examined:
         return
 
-    for idx, reel in enumerate(transcribed, 1):
-        t = reel.transcript
-        assert t is not None
-
+    for idx, reel in enumerate(examined, 1):
         content = [
             f"[bold cyan]Link:[/bold cyan] {reel.url}  •  [bold yellow]Viral Score:[/bold yellow] {reel.metrics.viral_score:.1f}  •  [bold green]Views:[/bold green] {format_number(reel.metrics.views)}",
-            f"[bold magenta]Duração:[/bold magenta] {t.duration:.1f}s  •  [bold blue]Idioma:[/bold blue] {t.language.upper()}\n",
-            f"[bold green]Gancho Falado (Primeiros 3 segundos):[/bold green]\n\"{t.hook_text_3s}\"\n",
-            "[bold white]Roteiro Falado com Timestamps:[/bold white]",
+            f"[bold magenta]Duração:[/bold magenta] {reel.duration:.1f}s",
         ]
 
-        for seg in t.segments:
-            content.append(f"  [cyan]{seg.timestamp_formatted}[/cyan] {seg.text}")
+        if reel.visual_hook:
+            v = reel.visual_hook
+            content.extend([
+                "",
+                "[bold magenta]Gancho Visual (3 frames nos primeiros 3s - Visão Gemini):[/bold magenta]",
+                f"\"{v.visual_summary}\"",
+                f"[dim]• Cenário & Elementos:[/dim] {v.scene_elements}",
+                f"[dim]• Texto na Tela:[/dim] {v.on_screen_text}",
+                f"[dim]• Quebra de Padrão (Pattern Interrupt):[/dim] {v.pattern_interrupt}",
+            ])
+
+        if reel.transcript:
+            t = reel.transcript
+            content.extend([
+                "",
+                f"[bold green]Gancho Falado (Primeiros 3 segundos - Whisper):[/bold green]\n\"{t.hook_text_3s}\"",
+                "",
+                f"[bold white]Roteiro Falado com Timestamps ({t.language.upper()}):[/bold white]",
+            ])
+            for seg in t.segments:
+                content.append(f"  [cyan]{seg.timestamp_formatted}[/cyan] {seg.text}")
 
         console.print(
             Panel(
                 "\n".join(content),
-                title=f"[bold green]Roteiro Transcrito #{idx} via Whisper: {reel.code}[/bold green]",
+                title=f"[bold green]Análise de Áudio & Visão #{idx}: {reel.code}[/bold green]",
                 border_style="green",
             )
         )
@@ -153,15 +167,23 @@ def render_analysis_panel(analysis: ViralAnalysis) -> None:
     recs = "\n".join(f"{i}. {r}" for i, r in enumerate(analysis.actionable_recommendations, 1))
 
     content = [
-        "[bold cyan]Padrões de Ganchos (Hooks dos Primeiros 3s):[/bold cyan]",
+        "[bold cyan]Padrões de Ganchos Falados (Hooks dos Primeiros 3s):[/bold cyan]",
         f"{hooks}\n",
         "[bold yellow]Formatos e Temas Predominantes:[/bold yellow]",
         f"{themes}\n",
-        f"[bold magenta]Áudios e Trilhas:[/bold magenta] {analysis.audio_insights}\n",
-        f"[bold blue]Estratégia de Legendas e CTA:[/bold blue] {analysis.caption_strategy}\n",
-        "[bold green]Recomendações Práticas:[/bold green]",
-        f"{recs}",
+        "[bold magenta]Áudios e Trilhas:[/bold magenta] " + analysis.audio_insights + "\n",
+        "[bold blue]Estratégia de Legendas e CTA:[/bold blue] " + analysis.caption_strategy + "\n",
     ]
+
+    if getattr(analysis, "visual_hook_patterns", None):
+        vis_patterns = "\n".join(f"- {vp}" for vp in analysis.visual_hook_patterns)
+        content.append(f"[bold magenta]Padrões Visuais nos Primeiros 3s (Visão Gemini):[/bold magenta]\n{vis_patterns}\n")
+
+    if getattr(analysis, "visual_recommendations", None):
+        vis_recs = "\n".join(f"- {vr}" for vr in analysis.visual_recommendations)
+        content.append(f"[bold green]Recomendações Visuais para Gravação:[/bold green]\n{vis_recs}\n")
+
+    content.append("[bold green]Recomendações Práticas Gerais:[/bold green]\n" + recs)
 
     console.print(
         Panel(
@@ -199,15 +221,28 @@ def render_profile_analysis_panel(analysis: ProfileAnalysis) -> None:
         f"[bold]Fórmula de Estrutura do Roteiro:[/bold] [italic]{spoken.script_structure_formula}[/italic]\n",
         f"[bold]Chamadas para Ação Faladas (CTAs):[/bold]\n{ctas}\n",
         "---",
-        "[bold cyan]3. Desempenho e Consistência dos Reels:[/bold cyan]",
+    ]
+
+    if getattr(analysis, "visual_style_and_presence", None):
+        content.extend([
+            "[bold cyan]3. Análise Visual e Estética nos Primeiros 3s (Visão Gemini):[/bold cyan]",
+            f"{analysis.visual_style_and_presence}\n",
+        ])
+        if getattr(analysis, "visual_hook_breakdown", None):
+            v_breaks = "\n".join(f"- {vb}" for vb in analysis.visual_hook_breakdown)
+            content.append(f"[bold]Decodificação dos Ganchos Visuais:[/bold]\n{v_breaks}\n")
+        content.append("---")
+
+    content.extend([
+        "[bold cyan]Desempenho e Consistência dos Reels:[/bold cyan]",
         f"{analysis.reels_performance_summary}\n",
         "---",
-        "[bold cyan]4. Táticas para Modelar com Originalidade:[/bold cyan]",
+        "[bold cyan]Táticas para Modelar com Originalidade:[/bold cyan]",
         f"{tactics}\n",
         "---",
-        "[bold green]5. Template Prático de Roteiro Recomendado:[/bold green]",
+        "[bold green]Template Prático de Roteiro Recomendado:[/bold green]",
         f"[italic yellow]{analysis.recommended_script_template}[/italic yellow]",
-    ]
+    ])
 
     console.print(
         Panel(

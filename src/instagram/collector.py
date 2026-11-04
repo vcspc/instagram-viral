@@ -1,5 +1,6 @@
 """Coletor de publicações focado em Reels com múltiplos fallbacks, busca textual e análise de perfis."""
 import logging
+import re
 from datetime import datetime
 from instagrapi import Client
 from instagrapi.exceptions import (
@@ -106,6 +107,50 @@ class InstagramCollector:
 
         logger.info(f"Coletados {len(results)} Reels únicos do perfil.")
         return results
+
+    def get_reel_by_url(self, url_or_code: str) -> ReelItem:
+        """Obtém os dados completos e stream de vídeo de um Reel a partir de sua URL ou código."""
+        clean_input = url_or_code.strip()
+        code = self.extract_code_from_url(clean_input)
+
+        logger.info(f"Buscando informações do Reel {code}...")
+        self.rate_limiter.wait()
+
+        # Decodifica o PK numérico
+        try:
+            if "http://" in clean_input or "https://" in clean_input:
+                pk = str(self.client.media_pk_from_url(clean_input))
+            else:
+                pk = str(self.client.media_pk_from_code(code))
+        except Exception:
+            from instagrapi.utils import InstagramIdCodec
+            pk = str(InstagramIdCodec.decode(code[:11]))
+
+        try:
+            media = self.client.media_info(int(pk))
+            self.rate_limiter.reset_errors()
+            return self._parse_media_to_reel(media, source_term=f"url:{code}")
+        except Exception as exc:
+            logger.warning(f"media_info falhou para {code} (PK: {pk}): {exc}. Usando fallback...")
+            return ReelItem(
+                pk=str(pk),
+                code=code,
+                url=f"https://www.instagram.com/reel/{code}/",
+                caption="",
+                duration=0.0,
+                author_username="",
+                video_url=None,
+                source_term=f"url:{code}",
+            )
+
+    @staticmethod
+    def extract_code_from_url(url_or_code: str) -> str:
+        """Extrai o shortcode limpo a partir de qualquer formato de link do Instagram."""
+        clean = url_or_code.strip()
+        match = re.search(r"/(?:reel|reels|p)/([A-Za-z0-9_-]+)", clean)
+        if match:
+            return match.group(1)
+        return clean.strip("/?& ")
 
     def search_reels_by_keyword(
         self, keyword: str, amount: int = 20, min_taken_at: datetime | None = None

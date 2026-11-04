@@ -32,12 +32,12 @@ class ProfileAnalyzer:
 
         # Monta a seção de Reels transcritos com timestamps
         transcripts_section: list[str] = []
-        target_transcribed = transcribed_reels or [r for r in reels if r.transcript]
+        target_transcribed = transcribed_reels or [r for r in reels if r.transcript or r.visual_hook]
 
         for idx, r in enumerate(target_transcribed, 1):
             t = r.transcript
             lines = [
-                f"\n[Reel Transcrito #{idx} - Código: {r.code}]",
+                f"\n[Reel Analisado #{idx} - Código: {r.code}]",
                 f"- Link: {r.url}",
                 f"- Duração: {r.duration:.1f}s | Publicado em: {r.taken_at.strftime('%d/%m/%Y') if r.taken_at else '-'}",
                 f"- Views: {format_number(r.metrics.views)} | Likes: {format_number(r.metrics.likes)} | Comentários: {format_number(r.metrics.comments)}",
@@ -50,8 +50,14 @@ class ProfileAnalyzer:
                 lines.append("- ROTEIRO FALADO COMPLETO (COM TIMESTAMPS):")
                 for seg in t.segments:
                     lines.append(f"  {seg.timestamp_formatted} {seg.text}")
-            else:
-                lines.append("- (Sem transcrição de áudio disponível)")
+
+            if r.visual_hook:
+                v = r.visual_hook
+                lines.append("- GANCHO VISUAL (3 FRAMES NOS PRIMEIROS 3s - VISÃO GEMINI):")
+                lines.append(f"  * Síntese Visual: \"{v.visual_summary}\"")
+                lines.append(f"  * Elementos em Cena: {v.scene_elements}")
+                lines.append(f"  * Textos/Títulos na Tela: {v.on_screen_text}")
+                lines.append(f"  * Quebra de Padrão (Pattern Interrupt): {v.pattern_interrupt}")
 
             transcripts_section.append("\n".join(lines))
 

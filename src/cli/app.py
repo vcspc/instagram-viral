@@ -258,13 +258,14 @@ def search(
     console.print("\n")
     render_reels_table(ranked_reels, limit=min(len(ranked_reels), 15))
 
-    # 7. Download e Transcrição com Whisper dos Top N Reels do Nicho
+    # 7. Download, Transcrição com Whisper e Visão Computacional dos Top N Reels do Nicho
     if top_transcribe > 0:
-        console.print(f"\n[bold cyan]Baixando e transcrevendo os {min(top_transcribe, len(ranked_reels))} Reels mais virais do nicho via Whisper ({language.upper()})...[/bold cyan]")
+        console.print(f"\n[bold cyan]Baixando, transcrevendo e analisando visão dos {min(top_transcribe, len(ranked_reels))} Reels mais virais ({language.upper()})...[/bold cyan]")
         audio_mgr = AudioTranscriptionManager(
             client=client,
             whisper_model=whisper_model,
             language=language,
+            gemini_client=gemini_client,
         )
 
         with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
@@ -435,17 +436,19 @@ def profile(
     console.print("\n")
     render_reels_table(ranked_reels, limit=min(len(ranked_reels), 15))
 
-    # 5. Download e Transcrição com Whisper dos Top N Reels
+    # 5. Download, Transcrição com Whisper e Visão Computacional dos Top N Reels
+    gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model) if settings.gemini_api_key else None
     if top_transcribe > 0:
-        console.print(f"\n[bold cyan]Baixando e transcrevendo os {min(top_transcribe, len(ranked_reels))} Reels mais virais via Whisper ({language.upper()})...[/bold cyan]")
+        console.print(f"\n[bold cyan]Baixando, transcrevendo e analisando visão dos {min(top_transcribe, len(ranked_reels))} Reels mais virais ({language.upper()})...[/bold cyan]")
         audio_mgr = AudioTranscriptionManager(
             client=client,
             whisper_model=whisper_model,
             language=language,
+            gemini_client=gemini_client,
         )
 
         with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
-            task = progress.add_task(description="Iniciando processamento de áudio...", total=None)
+            task = progress.add_task(description="Iniciando processamento de áudio e visão...", total=None)
 
             def update_progress_msg(msg: str):
                 progress.update(task, description=msg)
@@ -459,9 +462,8 @@ def profile(
 
     # 6. Análise Estratégica Completa com o Gemini
     profile_analysis = None
-    if not no_analysis:
+    if not no_analysis and gemini_client:
         console.print("\n[bold cyan]Gerando diagnóstico estratégico e decodificação de roteiros com Gemini...[/bold cyan]")
-        gemini_client = GeminiClient(api_key=settings.gemini_api_key, model=settings.gemini_model)
         analyzer = ProfileAnalyzer(gemini_client=gemini_client)
 
         with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
@@ -488,6 +490,102 @@ def profile(
     console.print(f"  [cyan]Planilha CSV:[/cyan] {paths['csv']}")
     console.print(f"  [cyan]JSON Estruturado:[/cyan] {paths['json']}")
     console.print("\n[dim]Abra o arquivo Markdown para visualizar todos os roteiros transcritos e links dos Reels.[/dim]\n")
+
+
+@app.command(name="transcribe")
+def transcribe_reels_cli(
+    urls: list[str] = typer.Argument(
+        None, help="Uma ou mais URLs de Reels do Instagram (separadas por espaço)."
+    ),
+    file: Path = typer.Option(
+        None, "--file", "-f", help="Caminho para arquivo .txt contendo URLs (uma por linha)."
+    ),
+    language: str = typer.Option(
+        "pt",
+        "--language",
+        "--lang",
+        help="Idioma para transcrição do Whisper: 'pt' (padrão), 'en', 'es', etc., ou 'auto'.",
+    ),
+    whisper_model: str = typer.Option(
+        "base", "--whisper-model", "-w", help="Modelo Whisper: 'base', 'tiny' ou 'small'."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Exibe logs detalhados de depuração."
+    ),
+) -> None:
+    """Modo exclusivo de transcrição literal de áudio de Reels enviados via links."""
+    setup_logging(level=logging.DEBUG if verbose else logging.INFO)
+    render_banner()
+
+    target_urls: list[str] = list(urls) if urls else []
+
+    if file:
+        file_path = Path(file)
+        if not file_path.exists():
+            console.print(f"[bold red]Erro:[/bold red] Arquivo '{file}' não encontrado.")
+            raise typer.Exit(code=1)
+        for line in file_path.read_text(encoding="utf-8").splitlines():
+            line_str = line.strip()
+            if line_str and not line_str.startswith("#"):
+                target_urls.append(line_str)
+
+    if not target_urls:
+        console.print(
+            "\n[bold red]Erro:[/bold red] Nenhuma URL informada.\n"
+            "[bold yellow]Exemplo de uso:[/bold yellow]\n"
+            "  ✓ [bold green]python -m src.main transcribe https://www.instagram.com/reel/DdrW4GDAnjS/[/bold green]\n"
+            "  ✓ [bold green]python -m src.main transcribe url1 url2 url3 --lang pt[/bold green]\n"
+            "  ✓ [bold green]python -m src.main transcribe -f links.txt[/bold green]\n"
+        )
+        raise typer.Exit(code=1)
+
+    console.print(f"\n[bold cyan]Iniciando Modo de Transcrição Literal ({len(target_urls)} vídeo(s))...[/bold cyan]")
+    console.print(f"[dim]Idioma Whisper: {language.upper()} • Modelo: {whisper_model}[/dim]\n")
+
+    client = None
+    try:
+        session_mgr = InstagramSessionManager(
+            username=settings.instagram_username,
+            password=settings.instagram_password,
+            session_dir=settings.instagram_session_dir,
+            sessionid=settings.instagram_sessionid,
+            two_factor_seed=settings.instagram_2fa_seed,
+            proxy=settings.instagram_proxy,
+        )
+        client = session_mgr.get_authenticated_client()
+    except Exception as exc:
+        logger.warning(f"Aviso na conexão com Instagram ({exc}). Tentando prosseguir com download público...")
+
+    collector = InstagramCollector(client=client) if client else None
+    audio_mgr = AudioTranscriptionManager(
+        client=client,
+        whisper_model=whisper_model,
+        language=language,
+        enable_vision=False,
+    )
+    exporter = ReportExporter(output_dir=settings.outputs_dir)
+
+    with Progress(SpinnerColumn("dots"), TextColumn("[progress.description]{task.description}"), console=console) as progress:
+        task = progress.add_task(description="Processando URLs e transcrevendo áudios...", total=None)
+
+        def update_msg(msg: str):
+            progress.update(task, description=msg)
+
+        reels = audio_mgr.transcribe_reels_from_urls(
+            target_urls, collector=collector, status_callback=update_msg
+        )
+
+    console.print("\n")
+    render_transcripts_panel(reels)
+
+    md_path = exporter.export_transcriptions_markdown(
+        reels=reels,
+        language=language,
+        whisper_model=whisper_model,
+    )
+
+    console.print("\n[bold green]Documento Markdown de Transcrições gerado com sucesso:[/bold green]")
+    console.print(f"  [cyan]Arquivo Markdown:[/cyan] [bold underline white]{md_path}[/bold underline white]\n")
 
 
 @app.command(name="ui")

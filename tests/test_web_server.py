@@ -59,5 +59,31 @@ class TestWebServer(AioHTTPTestCase):
             self.assertTrue(data.get("success"))
 
 
+    @unittest_run_loop
+    async def test_api_transcribe_validation(self):
+        # 1. Sem URLs
+        resp = await self.client.post("/api/transcribe", json={"urls": []})
+        self.assertEqual(resp.status, 400)
+        data = await resp.json()
+        self.assertIn("error", data)
+
+        # 2. Com mock da lógica síncrona
+        from unittest.mock import patch
+        mock_result = {
+            "success": True,
+            "total_urls": 1,
+            "total_transcribed": 1,
+            "markdown_file": "transcricoes_test.md",
+            "download_url": "/api/reports/download/transcricoes_test.md",
+            "reels": [],
+        }
+        with patch("src.web.server.AppServer._execute_transcribe_sync", return_value=mock_result):
+            resp2 = await self.client.post("/api/transcribe", json={"urls": ["https://instagram.com/reel/123/"]})
+            self.assertEqual(resp2.status, 200)
+            data2 = await resp2.json()
+            self.assertTrue(data2.get("success"))
+            self.assertEqual(data2.get("markdown_file"), "transcricoes_test.md")
+
+
 if __name__ == "__main__":
     unittest.main()

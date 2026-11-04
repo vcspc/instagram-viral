@@ -25,12 +25,12 @@ class GeminiClient:
 
     def generate_structured(
         self,
-        prompt: str,
+        prompt: str | list,
         system_instruction: str,
         response_schema: type[T],
     ) -> T:
-        """Gera resposta do modelo forçando o schema Pydantic via JSON estruturado."""
-        logger.debug(f"Enviando prompt ao Gemini ({self.model})...")
+        """Gera resposta do modelo forçando o schema Pydantic via JSON estruturado (suporta texto e multimodal)."""
+        logger.debug(f"Enviando requisição ao Gemini ({self.model})...")
 
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,

@@ -45,7 +45,11 @@ Diretrizes de Análise:
    - Decodifique o gancho falado especificamente nos primeiros 3 segundos de cada vídeo (o que o criador disse para reter a atenção antes do usuário rolar o feed).
    - Analise o ritmo do discurso, pausas e quebras de padrão ao longo dos timestamps.
    - Identifique como o criador pede ações verbais no áudio (chamadas para comentar, salvar ou seguir).
-3. Fórmula e Template Replicável:
+3. Análise Visual de Ganchos (0s a 3s):
+   - Avalie o impacto visual dos primeiros 3 segundos descritos a partir dos frames capturados.
+   - Analise enquadramentos, cenários, iluminação, presença corporal e textos sobrepostos na tela.
+   - Identifique como a parte visual e a fala trabalham em conjunto para prender o espectador imediatamente.
+4. Fórmula e Template Replicável:
    - Extraia a fórmula estrutural do roteiro que gerou os maiores picos virais.
    - Entregue um template de roteiro prático e detalhado passo a passo que qualquer pessoa possa utilizar para criar vídeos virais no mesmo estilo.
 """

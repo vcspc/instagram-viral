@@ -13,8 +13,11 @@ Ferramenta inteligente em Python para pesquisar, ranquear e analisar vídeos de 
    - **Filtro Abrangente de Vídeos**: Reconhece Reels em qualquer formato do Instagram (`media_type == 2`, `video_duration > 0`, `clips` ou `feed`).
 3. **Loop de Refinamento Autônomo**: Se a meta de vídeos não for atingida na primeira rodada, o Gemini inspeciona o lote inicial e gera termos refinados e adjacentes para a rodada seguinte.
 4. **Cálculo Ponderado de Viral Score**: Equilibra escala de visualizações com engajamento ativo, dando peso maior a comentários (que sinalizam debate e retenção para o algoritmo).
-5. **Engenharia Reversa dos Top Reels**: O Gemini analisa os 10 melhores vídeos encontrados e decodifica os **ganchos (hooks) dos primeiros 3 segundos**, temas dominantes, estratégias de legenda e recomendações práticas.
-6. **Exportação Automática**: Salva os resultados em **Markdown** (com links diretos clicáveis para cada Reel), **CSV** (para Excel/Google Sheets) e **JSON**.
+5. **Transcrição Whisper & Visão Multimodal dos Primeiros 3 Segundos**:
+   - **Áudio (Whisper):** Converte para WAV 16kHz via FFmpeg e transcreve a fala com timestamps `[MM:SS - MM:SS]`, isolando a primeira frase dita (0-3s).
+   - **Visão (Gemini Vision):** Extrai 3 frames fotográficos dos primeiros 3 segundos do vídeo via FFmpeg (em ~0.8s, 1.8s e 2.8s) e analisa: cenário, enquadramento, textos sobrepostos na tela e quebra de padrão visual (pattern interrupt).
+6. **Engenharia Reversa dos Top Reels**: O Gemini analisa os vídeos minerados combinando métricas, áudio e a análise visual do gancho, decodificando por que o vídeo viralizou.
+7. **Exportação Automática**: Salva os resultados em **Markdown** (com links diretos clicáveis para cada Reel), **CSV** (para Excel/Google Sheets) e **JSON**.
 
 ---
 
@@ -284,7 +287,7 @@ python -m src.main search -q "investimentos" -n 0
 
 ---
 
-### Modo 2: Auditoria de Perfil e Transcrição de Roteiros (`profile`)
+### Modo 3: Auditoria de Perfil e Transcrição de Roteiros (`profile`)
 Audita um perfil específico do Instagram passando a arroba (`@username`), analisa seguidores, posts, biografia, ranqueia os Reels de melhor desempenho, **baixa os Top Reels, converte em áudio via FFmpeg, transcreve com timestamps via Whisper** e decodifica a estratégia de roteiro com o Gemini:
 
 ```bash
@@ -317,6 +320,41 @@ python -m src.main profile @criador -n 3 --lang auto
 - `-w, --whisper-model TEXT`: Tamanho do modelo Whisper (`base`, `tiny`, `small`) (padrão: `base`).
 - `--language, --lang TEXT`: Idioma para transcrição do Whisper: `'pt'` (padrão, português brasileiro), `'en'`, `'es'`, ou `'auto'` para detecção automática (padrão: `pt`).
 - `--no-analysis`: Pula o diagnóstico qualitativo da IA e gera apenas as tabelas e transcrições.
+- `-v, --verbose`: Exibe logs detalhados de depuração.
+
+---
+
+### Modo 4: Transcrição Literal de Reels por Links (`transcribe`)
+Modo focado exclusivamente em **transcrever o áudio integral de quantos Reels você quiser a partir de links diretos**. Baixa os vídeos, converte via FFmpeg, transcreve com o Whisper e gera um arquivo **Markdown com a transcrição literal completa** (palavra por palavra do que foi dito) e a versão com marcadores de tempo (timestamps):
+
+```bash
+# Transcrever um único Reel:
+python -m src.main transcribe https://www.instagram.com/reel/DdrW4GDAnjS/
+
+# Transcrever múltiplos Reels de uma só vez (quantos links quiser):
+python -m src.main transcribe https://www.instagram.com/reel/DdrW4GDAnjS/ https://www.instagram.com/reel/C8xY12zAbc/
+
+# Transcrever a partir de um arquivo de texto com links (um por linha):
+python -m src.main transcribe -f lista_de_reels.txt
+
+# Escolher outro idioma ou detecção automática:
+python -m src.main transcribe https://www.instagram.com/reel/ABC123xyz/ --lang en
+```
+
+#### O que o modo de transcrição entrega:
+1. **Documento Markdown Organizado (`outputs/transcricoes_{timestamp}.md`):**
+   - Cabeçalho com estatísticas gerais: data, total de vídeos, tempo total de áudio transcrito, idioma e modelo.
+   - Índice com links diretos para cada vídeo transcrito e sua duração.
+   - **Transcrição Literal Completa:** O texto falado corrido na íntegra, ideal para leitura, resumos e prompts de IA.
+   - **Transcrição com Timestamps:** Marcadores de tempo segundo a segundo `[MM:SS - MM:SS]` para acompanhamento preciso da fala.
+2. **Disponível no Dashboard Web:**
+   - Na aba **Transcrição de Reels**, você pode simplesmente colar quantos links quiser no campo de texto, clicar em **Transcrever Vídeos** e baixar o documento Markdown gerado ou copiar o texto de cada vídeo com 1 clique!
+
+#### Parâmetros da CLI (`transcribe`):
+- `urls`: Uma ou mais URLs ou códigos de Reels do Instagram separadas por espaço.
+- `-f, --file PATH`: Caminho para um arquivo `.txt` contendo links de Reels (um por linha).
+- `--language, --lang TEXT`: Idioma da fala para o Whisper (`pt` por padrão, `en`, `es`, `auto`).
+- `-w, --whisper-model TEXT`: Tamanho do modelo Whisper (`base`, `tiny`, `small`) (padrão: `base`).
 - `-v, --verbose`: Exibe logs detalhados de depuração.
 
 ---

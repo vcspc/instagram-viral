@@ -40,16 +40,25 @@ class ViralAnalyzer:
                 for seg in t.segments:
                     reel_lines.append(f"  {seg.timestamp_formatted} {seg.text}")
 
+            if reel.visual_hook:
+                v = reel.visual_hook
+                reel_lines.append("- GANCHO VISUAL (3 FRAMES NOS PRIMEIROS 3s - VISÃO GEMINI):")
+                reel_lines.append(f"  * Síntese Visual: \"{v.visual_summary}\"")
+                reel_lines.append(f"  * Elementos em Cena: {v.scene_elements}")
+                reel_lines.append(f"  * Textos/Títulos na Tela: {v.on_screen_text}")
+                reel_lines.append(f"  * Quebra de Padrão (Pattern Interrupt): {v.pattern_interrupt}")
+
             reels_data.append("\n".join(reel_lines))
 
         prompt = f"""
         Nicho pesquisado: "{niche_topic}"
 
-        Abaixo estão os dados reais dos Reels com maior engajamento e viralidade encontrados no Instagram:
+        Abaixo estão os dados reais dos Reels com maior engajamento e viralidade encontrados no Instagram,
+        incluindo métricas, transcrições de áudio com timestamps e a análise visual dos 3 primeiros segundos de cada vídeo:
 
         {chr(10).join(reels_data)}
 
-        Faça a engenharia reversa desses vídeos e produza o relatório estruturado de inteligência de conteúdo.
+        Faça a engenharia reversa desses vídeos combinando a análise de fala, métricas e o impacto visual dos primeiros 3 segundos.
         """
 
         return self.gemini.generate_structured(
